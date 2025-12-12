@@ -1,0 +1,115 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base styles */
+html {
+  font-family: 'Source Sans 3', system-ui, sans-serif;
+}
+
+body {
+  @apply bg-cream text-charcoal antialiased;
+  min-height: 100vh;
+}
+
+/* Custom scrollbar for dashboard */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  @apply bg-brand-100 rounded-full;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  @apply bg-brand-400 rounded-full hover:bg-brand-500;
+}
+
+/* Star rating animation */
+.star-hover {
+  transition: transform 0.15s ease-out, color 0.15s ease-out;
+}
+
+.star-hover:hover {
+  transform: scale(1.2);
+}
+
+/* Gradient backgrounds */
+.gradient-warm {
+  background: linear-gradient(135deg, #fef7ee 0%, #fad8b1 50%, #f6bc7f 100%);
+}
+
+.gradient-brand {
+  background: linear-gradient(135deg, #ed7821 0%, #de5e17 50%, #b84715 100%);
+}
+
+/* Glass effect for cards */
+.glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+/* Decorative pattern for tablet background */
+.pattern-dots {
+  background-image: radial-gradient(circle, rgba(237, 120, 33, 0.1) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Focus states */
+input:focus, textarea:focus, select:focus, button:focus-visible {
+  @apply outline-none ring-2 ring-brand-400 ring-offset-2;
+}
+
+/* Loading spinner */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+/* Toast animations */
+.toast-enter {
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Chart tooltip custom styles */
+.recharts-tooltip-wrapper {
+  @apply !outline-none;
+}
+
+.recharts-default-tooltip {
+  @apply !bg-white !border-brand-200 !rounded-lg shadow-lg;
+}
+
+/* Table styles for admin */
+.admin-table th {
+  @apply text-left font-semibold text-charcoal bg-brand-50 px-4 py-3 first:rounded-tl-lg last:rounded-tr-lg;
+}
+
+.admin-table td {
+  @apply px-4 py-3 border-b border-brand-100;
+}
+
+.admin-table tr:last-child td {
+  @apply border-b-0;
+}
+
+.admin-table tbody tr {
+  @apply transition-colors hover:bg-brand-50/50;
+}
+
