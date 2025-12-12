@@ -144,6 +144,7 @@ export function useCustomerFrequency(dateRange?: DateRange, minReviews = 1) {
     customerName?: string
     count: number
     avgRating: number
+    lastReview: import('firebase/firestore').Timestamp
   }[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

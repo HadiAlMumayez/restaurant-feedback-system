@@ -12,13 +12,11 @@ import {
   getDoc,
   getDocs,
   query,
-  where,
   orderBy,
   limit,
   startAfter,
   Timestamp,
   DocumentSnapshot,
-  QueryConstraint,
 } from 'firebase/firestore'
 import { db } from './firebase'
 import type { Branch, Review, ReviewFormData, DateRange } from '../types'
