@@ -62,7 +62,8 @@ service cloud.firestore {
         && request.resource.data.location.size() <= 200
         && request.resource.data.isActive is bool
         && request.resource.data.createdAt == request.time
-        && request.resource.data.updatedAt == request.time;
+        && request.resource.data.updatedAt == request.time
+        && (request.resource.data.address == null || (request.resource.data.address is string && request.resource.data.address.size() <= 500));
       
       allow update: if isAuthenticated()
         && request.resource.data.updatedAt == request.time;
