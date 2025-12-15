@@ -7,15 +7,18 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import FeedbackForm from '../components/feedback/FeedbackForm'
 import ThankYouScreen from '../components/feedback/ThankYouScreen'
 import BranchSelector from '../components/feedback/BranchSelector'
+import LanguageSwitcher from '../components/LanguageSwitcher'
 import { getBranches, getBranch, submitReview } from '../services/firestore'
 import type { Branch, ReviewFormData } from '../types'
 
 type PageState = 'loading' | 'select-branch' | 'form' | 'thank-you'
 
 export default function FeedbackPage() {
+  const { t } = useTranslation()
   const { branchId: urlBranchId } = useParams<{ branchId: string }>()
   const navigate = useNavigate()
 
@@ -54,7 +57,7 @@ export default function FeedbackPage() {
         }
       } catch (err) {
         console.error('Failed to load branches:', err)
-        setError('Failed to load. Please check your connection.')
+        setError(t('feedback.error'))
         setPageState('select-branch')
       }
     }
@@ -86,7 +89,7 @@ export default function FeedbackPage() {
       <div className="min-h-screen flex items-center justify-center gradient-warm">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-brand-200 border-t-brand-500 rounded-full spinner mx-auto mb-4" />
-          <p className="text-xl text-gray-600">Loading...</p>
+          <p className="text-xl text-gray-600">{t('common.loading')}</p>
         </div>
       </div>
     )
@@ -111,19 +114,25 @@ export default function FeedbackPage() {
   if (!selectedBranch) {
     return (
       <div className="min-h-screen flex items-center justify-center gradient-warm">
-        <p className="text-xl text-red-600">Branch not found</p>
+        <p className="text-xl text-red-600">{t('feedback.invalidBranch')}</p>
       </div>
     )
   }
 
   return (
     <div className="min-h-screen gradient-warm pattern-dots">
+      {/* Language Switcher */}
+      <div className="absolute top-4 right-4 z-10">
+        <LanguageSwitcher />
+      </div>
+
       {/* Header */}
       <header className="py-8 text-center">
         <div className="text-5xl mb-2">🍽️</div>
         <h1 className="text-3xl md:text-4xl font-display font-bold text-charcoal">
-          Share Your Experience
+          {t('feedback.title')}
         </h1>
+        <p className="text-lg text-gray-600 mt-2">{t('feedback.subtitle')}</p>
       </header>
 
       {/* Form */}
@@ -137,7 +146,7 @@ export default function FeedbackPage() {
 
       {/* Footer */}
       <footer className="py-6 text-center text-gray-400 text-sm">
-        <p>Your feedback is anonymous unless you choose to share your details.</p>
+        <p>{t('feedback.thankYouMessage')}</p>
       </footer>
     </div>
   )

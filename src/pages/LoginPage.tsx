@@ -6,10 +6,13 @@
 
 import { useState, FormEvent, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { Mail, Lock, LogIn, Loader2 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import LanguageSwitcher from '../components/LanguageSwitcher'
 
 export default function LoginPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { user, loginWithEmail, loginWithGoogle, loading, error, clearError } = useAuth()
 
@@ -38,7 +41,7 @@ export default function LoginPage() {
     e.preventDefault()
     
     if (!email.trim() || !password.trim()) {
-      setLocalError('Please enter both email and password')
+      setLocalError(t('login.enterEmailPassword'))
       return
     }
 
@@ -77,14 +80,19 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-50 via-cream to-brand-100 p-6">
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-md relative">
+        {/* Language Switcher */}
+        <div className="absolute -top-16 right-0">
+          <LanguageSwitcher />
+        </div>
+
         {/* Logo/Header */}
         <div className="text-center mb-8">
           <div className="text-5xl mb-4">🍽️</div>
           <h1 className="text-3xl font-display font-bold text-charcoal">
-            Admin Dashboard
+            {t('login.title')}
           </h1>
-          <p className="text-gray-500 mt-2">Sign in to access analytics</p>
+          <p className="text-gray-500 mt-2">{t('login.subtitle')}</p>
         </div>
 
         {/* Login Card */}
@@ -100,19 +108,20 @@ export default function LoginPage() {
           <form onSubmit={handleEmailLogin} className="space-y-5">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email
+                {t('login.email')}
               </label>
               <div className="relative">
-                <Mail size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                <Mail size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 [dir=rtl]:left-auto [dir=rtl]:right-4" />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@restaurant.com"
-                  disabled={isSubmitting}
+                  placeholder={t('login.emailPlaceholder')}
                   className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl
                            focus:border-brand-400 transition-colors
-                           disabled:bg-gray-100 disabled:cursor-not-allowed"
+                           disabled:bg-gray-100 disabled:cursor-not-allowed
+                           [dir=rtl]:pl-4 [dir=rtl]:pr-12"
+                  disabled={isSubmitting}
                   autoComplete="email"
                 />
               </div>
@@ -120,19 +129,20 @@ export default function LoginPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Password
+                {t('login.password')}
               </label>
               <div className="relative">
-                <Lock size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                <Lock size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 [dir=rtl]:left-auto [dir=rtl]:right-4" />
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
+                  placeholder={t('login.passwordPlaceholder')}
                   disabled={isSubmitting}
                   className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl
                            focus:border-brand-400 transition-colors
-                           disabled:bg-gray-100 disabled:cursor-not-allowed"
+                           disabled:bg-gray-100 disabled:cursor-not-allowed
+                           [dir=rtl]:pl-4 [dir=rtl]:pr-12"
                   autoComplete="current-password"
                 />
               </div>
@@ -149,12 +159,12 @@ export default function LoginPage() {
               {isSubmitting ? (
                 <>
                   <Loader2 size={20} className="spinner" />
-                  Signing in...
+                  {t('login.signingIn')}
                 </>
               ) : (
                 <>
                   <LogIn size={20} />
-                  Sign In
+                  {t('login.signIn')}
                 </>
               )}
             </button>
@@ -166,7 +176,7 @@ export default function LoginPage() {
               <div className="w-full border-t border-gray-200" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-white text-gray-500">or continue with</span>
+              <span className="px-4 bg-white text-gray-500">{t('common.or')}</span>
             </div>
           </div>
 

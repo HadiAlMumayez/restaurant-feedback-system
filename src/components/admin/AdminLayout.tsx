@@ -7,6 +7,7 @@
 
 import { useState } from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import {
   LayoutDashboard,
   Building2,
@@ -19,19 +20,23 @@ import {
   ChevronRight,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
-
-const navItems = [
-  { to: '/admin', icon: LayoutDashboard, label: 'Overview', end: true },
-  { to: '/admin/branches', icon: Building2, label: 'Branches', end: false },
-  { to: '/admin/reviews', icon: MessageSquare, label: 'Reviews', end: false },
-  { to: '/admin/customers', icon: Users, label: 'Customers', end: false },
-  { to: '/admin/admins', icon: UserCog, label: 'Admins', end: false },
-]
+import LanguageSwitcher from '../LanguageSwitcher'
+import i18n from '../../services/i18n'
 
 export default function AdminLayout() {
+  const { t } = useTranslation()
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  const navItems = [
+    { to: '/admin', icon: LayoutDashboard, label: t('admin.overview'), end: true },
+    { to: '/admin/branches', icon: Building2, label: t('admin.branches'), end: false },
+    { to: '/admin/reviews', icon: MessageSquare, label: t('admin.reviews'), end: false },
+    { to: '/admin/customers', icon: Users, label: t('admin.customers'), end: false },
+    { to: '/admin/admins', icon: UserCog, label: t('admin.admins'), end: false },
+  ]
+
 
   const handleLogout = async () => {
     await logout()
@@ -91,7 +96,7 @@ export default function AdminLayout() {
             >
               <item.icon size={22} />
               <span>{item.label}</span>
-              <ChevronRight size={18} className="ml-auto opacity-50" />
+              <ChevronRight size={18} className="ml-auto opacity-50 [dir=rtl]:ml-0 [dir=rtl]:mr-auto" />
             </NavLink>
           ))}
         </nav>
@@ -120,13 +125,13 @@ export default function AdminLayout() {
                      hover:bg-red-100 transition-colors"
           >
             <LogOut size={18} />
-            Sign Out
+            {t('admin.logout')}
           </button>
         </div>
       </aside>
 
       {/* Main content */}
-      <div className="lg:ml-72">
+      <div className="lg:ml-72 [dir=rtl]:lg:ml-0 [dir=rtl]:lg:mr-72">
         {/* Header */}
         <header className="h-20 bg-white shadow-sm flex items-center justify-between px-6 sticky top-0 z-30">
           <button
@@ -138,13 +143,14 @@ export default function AdminLayout() {
 
           <div className="hidden lg:block">
             <h1 className="text-xl font-display font-semibold text-charcoal">
-              Dashboard
+              {t('admin.dashboard')}
             </h1>
           </div>
 
           <div className="flex items-center gap-4">
+            <LanguageSwitcher />
             <span className="text-sm text-gray-500">
-              {new Date().toLocaleDateString('en-US', {
+              {new Date().toLocaleDateString(i18n.language === 'ar' ? 'ar-SA' : 'en-US', {
                 weekday: 'long',
                 year: 'numeric',
                 month: 'long',

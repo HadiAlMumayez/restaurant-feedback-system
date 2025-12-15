@@ -6,6 +6,7 @@
  */
 
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { MessageSquare, User, Phone, Receipt, Send, Loader2 } from 'lucide-react'
 import StarRating from './StarRating'
 import type { ReviewFormData } from '../../types'
@@ -23,6 +24,7 @@ export default function FeedbackForm({
   onSubmit,
   disabled = false
 }: FeedbackFormProps) {
+  const { t } = useTranslation()
   const [rating, setRating] = useState(0)
   const [comment, setComment] = useState('')
   const [customerName, setCustomerName] = useState('')
@@ -37,7 +39,7 @@ export default function FeedbackForm({
     setError(null)
 
     if (rating === 0) {
-      setError('Please select a rating')
+      setError(t('feedback.ratingRequired'))
       return
     }
 
@@ -53,7 +55,7 @@ export default function FeedbackForm({
         billId: billId.trim(),
       })
     } catch (err) {
-      setError('Failed to submit feedback. Please try again.')
+      setError(t('feedback.error'))
       console.error('Submit error:', err)
     } finally {
       setIsSubmitting(false)
@@ -74,7 +76,7 @@ export default function FeedbackForm({
       {/* Rating section */}
       <div className="mb-10">
         <h2 className="text-2xl md:text-3xl font-display font-semibold text-center text-charcoal mb-6">
-          How was your experience?
+          {t('feedback.rating')}
         </h2>
         <StarRating
           rating={rating}
@@ -93,12 +95,12 @@ export default function FeedbackForm({
       <div className="mb-8">
         <label className="flex items-center gap-2 text-lg font-medium text-charcoal mb-3">
           <MessageSquare size={24} className="text-brand-500" />
-          Tell us more (optional)
+          {t('feedback.comment')}
         </label>
         <textarea
           value={comment}
           onChange={(e) => setComment(e.target.value)}
-          placeholder="What did you love? What can we improve?"
+          placeholder={t('feedback.commentPlaceholder')}
           disabled={isFormDisabled}
           className="w-full p-4 text-lg border-2 border-brand-200 rounded-xl 
                      focus:border-brand-400 transition-colors resize-none
@@ -119,7 +121,7 @@ export default function FeedbackForm({
           className="text-brand-600 hover:text-brand-700 text-lg font-medium 
                      underline underline-offset-4 transition-colors"
         >
-          {showOptional ? 'Hide' : 'Add'} contact details (optional)
+          {showOptional ? t('common.close') : t('common.add')} {t('feedback.contact')}
         </button>
       </div>
 
@@ -130,13 +132,13 @@ export default function FeedbackForm({
           <div>
             <label className="flex items-center gap-2 text-base font-medium text-charcoal mb-2">
               <User size={20} className="text-brand-500" />
-              Your Name
+              {t('feedback.customerName')}
             </label>
             <input
               type="text"
               value={customerName}
               onChange={(e) => setCustomerName(e.target.value)}
-              placeholder="John Doe"
+              placeholder={t('feedback.customerNamePlaceholder')}
               disabled={isFormDisabled}
               className="w-full p-4 text-lg border-2 border-brand-200 rounded-xl 
                          focus:border-brand-400 transition-colors
@@ -149,13 +151,13 @@ export default function FeedbackForm({
           <div>
             <label className="flex items-center gap-2 text-base font-medium text-charcoal mb-2">
               <Phone size={20} className="text-brand-500" />
-              Phone or Email
+              {t('feedback.contact')}
             </label>
             <input
               type="text"
               value={contact}
               onChange={(e) => setContact(e.target.value)}
-              placeholder="your@email.com or +1234567890"
+              placeholder={t('feedback.contactPlaceholder')}
               disabled={isFormDisabled}
               className="w-full p-4 text-lg border-2 border-brand-200 rounded-xl 
                          focus:border-brand-400 transition-colors
@@ -168,13 +170,13 @@ export default function FeedbackForm({
           <div>
             <label className="flex items-center gap-2 text-base font-medium text-charcoal mb-2">
               <Receipt size={20} className="text-brand-500" />
-              Bill/Receipt Number
+              {t('feedback.billId')}
             </label>
             <input
               type="text"
               value={billId}
               onChange={(e) => setBillId(e.target.value)}
-              placeholder="Optional - from your receipt"
+              placeholder={t('feedback.billIdPlaceholder')}
               disabled={isFormDisabled}
               className="w-full p-4 text-lg border-2 border-brand-200 rounded-xl 
                          focus:border-brand-400 transition-colors
@@ -205,12 +207,12 @@ export default function FeedbackForm({
         {isSubmitting ? (
           <>
             <Loader2 size={28} className="spinner" />
-            Submitting...
+            {t('feedback.submitting')}
           </>
         ) : (
           <>
             <Send size={28} />
-            Submit Feedback
+            {t('feedback.submit')}
           </>
         )}
       </button>

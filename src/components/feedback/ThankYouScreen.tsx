@@ -6,6 +6,7 @@
  */
 
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { CheckCircle, RotateCcw } from 'lucide-react'
 
 interface ThankYouScreenProps {
@@ -17,6 +18,7 @@ export default function ThankYouScreen({
   onReset,
   autoResetSeconds = 5
 }: ThankYouScreenProps) {
+  const { t } = useTranslation()
   const [countdown, setCountdown] = useState(autoResetSeconds)
 
   useEffect(() => {
@@ -46,10 +48,10 @@ export default function ThankYouScreen({
 
         {/* Thank you message */}
         <h1 className="text-4xl md:text-5xl font-display font-bold text-charcoal mb-4">
-          Thank You!
+          {t('feedback.thankYou')}
         </h1>
         <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-md mx-auto">
-          Your feedback helps us serve you better.
+          {t('feedback.thankYouMessage')}
         </p>
 
         {/* Countdown */}
@@ -57,7 +59,7 @@ export default function ThankYouScreen({
           <div className="inline-flex items-center gap-2 px-6 py-3 bg-white/80 rounded-full shadow-md">
             <RotateCcw size={20} className="text-brand-500 spinner" />
             <span className="text-lg text-gray-600">
-              Resetting in <span className="font-bold text-brand-600">{countdown}</span>s
+              {t('common.loading')} <span className="font-bold text-brand-600">{countdown}</span>s
             </span>
           </div>
         </div>
@@ -69,7 +71,7 @@ export default function ThankYouScreen({
                      rounded-xl shadow-md hover:shadow-lg hover:bg-brand-50
                      transition-all duration-200"
         >
-          New Feedback
+          {t('feedback.newFeedback')}
         </button>
       </div>
 

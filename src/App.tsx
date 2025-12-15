@@ -4,6 +4,7 @@ import { useAuth } from './context/AuthContext'
 // Pages
 import FeedbackPage from './pages/FeedbackPage'
 import LoginPage from './pages/LoginPage'
+import NotFoundPage from './pages/NotFoundPage'
 import AdminLayout from './components/admin/AdminLayout'
 import DashboardOverview from './pages/admin/DashboardOverview'
 import BranchComparison from './pages/admin/BranchComparison'
@@ -58,8 +59,8 @@ export default function App() {
         <Route path="admins" element={<AdminsManagement />} />
       </Route>
 
-      {/* Catch-all redirect */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+      {/* 404 Not Found */}
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   )
 }

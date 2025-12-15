@@ -7,9 +7,29 @@ html {
   font-family: 'Source Sans 3', system-ui, sans-serif;
 }
 
+html[dir="rtl"] {
+  font-family: 'Source Sans 3', 'Segoe UI', Tahoma, Arial, sans-serif;
+}
+
 body {
   @apply bg-cream text-charcoal antialiased;
   min-height: 100vh;
+}
+
+/* RTL Support */
+[dir="rtl"] {
+  direction: rtl;
+}
+
+/* RTL-specific spacing adjustments */
+[dir="rtl"] .ml-auto {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+[dir="rtl"] .mr-auto {
+  margin-right: 0;
+  margin-left: auto;
 }
 
 /* Custom scrollbar for dashboard */
