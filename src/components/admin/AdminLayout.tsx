@@ -12,6 +12,7 @@ import {
   Building2,
   MessageSquare,
   Users,
+  UserCog,
   LogOut,
   Menu,
   X,
@@ -24,6 +25,7 @@ const navItems = [
   { to: '/admin/branches', icon: Building2, label: 'Branches', end: false },
   { to: '/admin/reviews', icon: MessageSquare, label: 'Reviews', end: false },
   { to: '/admin/customers', icon: Users, label: 'Customers', end: false },
+  { to: '/admin/admins', icon: UserCog, label: 'Admins', end: false },
 ]
 
 export default function AdminLayout() {

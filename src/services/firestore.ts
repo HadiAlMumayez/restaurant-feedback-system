@@ -11,6 +11,8 @@ import {
   addDoc,
   getDoc,
   getDocs,
+  updateDoc,
+  deleteDoc,
   query,
   orderBy,
   limit,
@@ -60,6 +62,68 @@ export async function getBranch(branchId: string): Promise<Branch | null> {
     id: docSnap.id,
     ...docSnap.data()
   } as Branch
+}
+
+// Get all branches (including inactive) - for admin use
+export async function getAllBranches(): Promise<Branch[]> {
+  const snapshot = await getDocs(collection(db, BRANCHES_COLLECTION))
+  
+  const branches = snapshot.docs
+    .map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    })) as Branch[]
+  
+  return branches.sort((a, b) => a.name.localeCompare(b.name))
+}
+
+// Create a new branch
+export async function createBranch(data: {
+  name: string
+  location: string
+  address?: string
+  isActive?: boolean
+}): Promise<string> {
+  const branch = {
+    name: data.name.trim(),
+    location: data.location.trim(),
+    address: data.address?.trim() || null,
+    isActive: data.isActive !== undefined ? data.isActive : true,
+    createdAt: Timestamp.now(),
+    updatedAt: Timestamp.now(),
+  }
+
+  const docRef = await addDoc(collection(db, BRANCHES_COLLECTION), branch)
+  return docRef.id
+}
+
+// Update a branch
+export async function updateBranch(
+  branchId: string,
+  data: {
+    name?: string
+    location?: string
+    address?: string
+    isActive?: boolean
+  }
+): Promise<void> {
+  const docRef = doc(db, BRANCHES_COLLECTION, branchId)
+  const updates: any = {
+    updatedAt: Timestamp.now(),
+  }
+
+  if (data.name !== undefined) updates.name = data.name.trim()
+  if (data.location !== undefined) updates.location = data.location.trim()
+  if (data.address !== undefined) updates.address = data.address?.trim() || null
+  if (data.isActive !== undefined) updates.isActive = data.isActive
+
+  await updateDoc(docRef, updates)
+}
+
+// Delete a branch
+export async function deleteBranch(branchId: string): Promise<void> {
+  const docRef = doc(db, BRANCHES_COLLECTION, branchId)
+  await deleteDoc(docRef)
 }
 
 /**

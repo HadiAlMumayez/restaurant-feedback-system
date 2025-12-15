@@ -7,8 +7,10 @@ import LoginPage from './pages/LoginPage'
 import AdminLayout from './components/admin/AdminLayout'
 import DashboardOverview from './pages/admin/DashboardOverview'
 import BranchComparison from './pages/admin/BranchComparison'
+import BranchesManagement from './pages/admin/BranchesManagement'
 import ReviewsList from './pages/admin/ReviewsList'
 import CustomerFrequency from './pages/admin/CustomerFrequency'
+import AdminsManagement from './pages/admin/AdminsManagement'
 
 // Protected Route wrapper
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -49,9 +51,11 @@ export default function App() {
         }
       >
         <Route index element={<DashboardOverview />} />
-        <Route path="branches" element={<BranchComparison />} />
+        <Route path="branches" element={<BranchesManagement />} />
+        <Route path="branches/comparison" element={<BranchComparison />} />
         <Route path="reviews" element={<ReviewsList />} />
         <Route path="customers" element={<CustomerFrequency />} />
+        <Route path="admins" element={<AdminsManagement />} />
       </Route>
 
       {/* Catch-all redirect */}

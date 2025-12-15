@@ -1,7 +1,104 @@
 rules_version = '2';
 
+/**
+ * Firestore Security Rules for Restaurant Feedback System
+ * 
+ * DESIGN PRINCIPLES:
+ * 1. Customer tablets can ONLY create reviews (no read/update/delete)
+ * 2. Authenticated admin users can read all data and manage branches/admins
+ * 3. No one can delete data through client (use Firebase console for admin tasks)
+ * 4. Validate data on write to prevent malicious input
+ */
+
 service cloud.firestore {
   match /databases/{database}/documents {
+    
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper function to validate rating value
+    function isValidRating(rating) {
+      return rating is int && rating >= 1 && rating <= 5;
+    }
+    
+    // Helper function to validate string length
+    function isValidString(value, maxLength) {
+      return value == null || (value is string && value.size() <= maxLength);
+    }
+    
+    // Helper function to validate review data
+    function isValidReview(data) {
+      return data.keys().hasAll(['branchId', 'rating', 'createdAt'])
+        && data.branchId is string
+        && data.branchId.size() > 0
+        && data.branchId.size() <= 50
+        && isValidRating(data.rating)
+        && data.createdAt == request.time
+        && isValidString(data.comment, 1000)
+        && isValidString(data.customerName, 100)
+        && isValidString(data.contact, 100)
+        && isValidString(data.billId, 50);
+    }
+    
+    /**
+     * BRANCHES COLLECTION
+     * - Read: Authenticated admins only (active branches also readable by public)
+     * - Write: Authenticated admins only
+     */
+    match /branches/{branchId} {
+      // Allow reading active branches for tablet
+      allow read: if resource.data.isActive == true || isAuthenticated();
+      
+      // Only authenticated admins can create/update branches
+      allow create: if isAuthenticated()
+        && request.resource.data.keys().hasAll(['name', 'location', 'isActive', 'createdAt', 'updatedAt'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 100
+        && request.resource.data.location is string
+        && request.resource.data.location.size() > 0
+        && request.resource.data.location.size() <= 200
+        && request.resource.data.isActive is bool
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+      
+      allow update: if isAuthenticated()
+        && request.resource.data.updatedAt == request.time;
+      
+      // No deletes from client
+      allow delete: if false;
+    }
+    
+    /**
+     * REVIEWS COLLECTION
+     * - Create: Anyone (customers on tablet) - with validation
+     * - Read: Authenticated admins only
+     * - Update/Delete: None (immutable records)
+     */
+    match /reviews/{reviewId} {
+      // Public create with strict validation
+      allow create: if isValidReview(request.resource.data);
+      
+      // Only authenticated users can read reviews
+      allow read: if isAuthenticated();
+      
+      // No updates or deletes from client
+      allow update, delete: if false;
+    }
+    
+    /**
+     * ADMINS COLLECTION (tracking admin emails)
+     * - Only authenticated admins can read/write
+     */
+    match /admins/{adminId} {
+      allow read, write: if isAuthenticated();
+    }
+    
+    /**
+     * DEFAULT: Deny all other access
+     */
     match /{document=**} {
       allow read, write: if false;
     }
