@@ -18,6 +18,7 @@ import {
   limit,
   startAfter,
   Timestamp,
+  serverTimestamp,
   DocumentSnapshot,
   QueryConstraint,
 } from 'firebase/firestore'
@@ -89,8 +90,8 @@ export async function createBranch(data: {
     location: data.location.trim(),
     address: data.address?.trim() || null,
     isActive: data.isActive !== undefined ? data.isActive : true,
-    createdAt: Timestamp.now(),
-    updatedAt: Timestamp.now(),
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
   }
 
   const docRef = await addDoc(collection(db, BRANCHES_COLLECTION), branch)
@@ -109,7 +110,7 @@ export async function updateBranch(
 ): Promise<void> {
   const docRef = doc(db, BRANCHES_COLLECTION, branchId)
   const updates: any = {
-    updatedAt: Timestamp.now(),
+    updatedAt: serverTimestamp(),
   }
 
   if (data.name !== undefined) updates.name = data.name.trim()

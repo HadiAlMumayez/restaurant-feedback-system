@@ -7,6 +7,7 @@
 import { useState, useEffect } from 'react'
 import { Plus, Edit2, Trash2, MapPin, Building2, ToggleLeft, ToggleRight, Loader2 } from 'lucide-react'
 import { getAllBranches, createBranch, updateBranch, deleteBranch } from '../../services/firestore'
+import { useAuth } from '../../context/AuthContext'
 import type { Branch } from '../../types'
 
 interface BranchFormData {
@@ -17,6 +18,7 @@ interface BranchFormData {
 }
 
 export default function BranchesManagement() {
+  const { user } = useAuth()
   const [branches, setBranches] = useState<Branch[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -55,6 +57,13 @@ export default function BranchesManagement() {
     setIsSubmitting(true)
     setError(null)
 
+    // Verify user is authenticated
+    if (!user) {
+      setError('You must be logged in to create branches. Please refresh the page and log in again.')
+      setIsSubmitting(false)
+      return
+    }
+
     try {
       if (editingBranch) {
         // Update existing branch
@@ -79,9 +88,14 @@ export default function BranchesManagement() {
       setShowForm(false)
       setEditingBranch(null)
       await loadBranches()
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to save branch:', err)
-      setError(err instanceof Error ? err.message : 'Failed to save branch')
+      // Provide more detailed error message
+      if (err?.code === 'permission-denied' || err?.message?.includes('permission')) {
+        setError('Permission denied. Please make sure you are logged in and try again. If the problem persists, the security rules may need to be updated.')
+      } else {
+        setError(err?.message || 'Failed to save branch. Please try again.')
+      }
     } finally {
       setIsSubmitting(false)
     }
