@@ -18,12 +18,14 @@ import {
   Bar,
 } from 'recharts'
 import { MessageSquare, Star, Building2, TrendingUp, Loader2 } from 'lucide-react'
+import { useSafeTranslation } from '../../hooks/useSafeTranslation'
 import StatCard from '../../components/admin/StatCard'
 import DateRangePicker from '../../components/admin/DateRangePicker'
 import { useDashboardData, formatDateForDisplay } from '../../hooks/useDashboardData'
 import type { DateRange } from '../../types'
 
 export default function DashboardOverview() {
+  const { t } = useSafeTranslation()
   const [dateRange, setDateRange] = useState<DateRange>({
     startDate: subDays(new Date(), 30),
     endDate: new Date(),
@@ -48,7 +50,7 @@ export default function DashboardOverview() {
             onClick={() => window.location.reload()}
             className="px-6 py-2 bg-brand-500 text-white rounded-lg"
           >
-            Retry
+            {t('admin.retry', 'Retry')}
           </button>
         </div>
       </div>
@@ -70,8 +72,8 @@ export default function DashboardOverview() {
       {/* Header with date picker */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-display font-bold text-charcoal">Overview</h1>
-          <p className="text-gray-500">Welcome back! Here's what's happening.</p>
+          <h1 className="text-2xl font-display font-bold text-charcoal">{t('admin.overview')}</h1>
+          <p className="text-gray-500">{t('admin.welcomeBack')}</p>
         </div>
         <DateRangePicker value={dateRange} onChange={setDateRange} />
       </div>
@@ -79,28 +81,28 @@ export default function DashboardOverview() {
       {/* Stats cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          title="Total Reviews"
+          title={t('admin.totalReviews')}
           value={totals.totalReviews.toLocaleString()}
           icon={MessageSquare}
           color="brand"
         />
         <StatCard
-          title="Average Rating"
+          title={t('admin.averageRating')}
           value={totals.averageRating.toFixed(1)}
-          subtitle="out of 5 stars"
+          subtitle={t('admin.outOf5Stars')}
           icon={Star}
           color="green"
         />
         <StatCard
-          title="Active Branches"
+          title={t('admin.activeBranches')}
           value={totals.activeBranches}
           icon={Building2}
           color="blue"
         />
         <StatCard
-          title="Period Reviews"
+          title={t('admin.periodReviews')}
           value={dailyStats.reduce((sum, d) => sum + d.count, 0).toLocaleString()}
-          subtitle="in selected range"
+          subtitle={t('admin.inSelectedRange')}
           icon={TrendingUp}
           color="purple"
         />
@@ -110,7 +112,7 @@ export default function DashboardOverview() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Reviews over time */}
         <div className="bg-white rounded-2xl p-6 shadow-sm">
-          <h3 className="text-lg font-semibold text-charcoal mb-4">Reviews Over Time</h3>
+          <h3 className="text-lg font-semibold text-charcoal mb-4">{t('admin.reviewsOverTime')}</h3>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData}>
@@ -146,7 +148,7 @@ export default function DashboardOverview() {
                   stroke="#ed7821"
                   strokeWidth={2}
                   fill="url(#colorCount)"
-                  name="Reviews"
+                  name={t('admin.reviews')}
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -155,7 +157,7 @@ export default function DashboardOverview() {
 
         {/* Top branches */}
         <div className="bg-white rounded-2xl p-6 shadow-sm">
-          <h3 className="text-lg font-semibold text-charcoal mb-4">Top Branches by Reviews</h3>
+          <h3 className="text-lg font-semibold text-charcoal mb-4">{t('admin.topBranchesByReviews')}</h3>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={topBranches} layout="vertical">
@@ -179,7 +181,7 @@ export default function DashboardOverview() {
                   dataKey="totalReviews"
                   fill="#ed7821"
                   radius={[0, 4, 4, 0]}
-                  name="Reviews"
+                  name={t('admin.reviews')}
                 />
               </BarChart>
             </ResponsiveContainer>
@@ -189,9 +191,9 @@ export default function DashboardOverview() {
 
       {/* Recent reviews */}
       <div className="bg-white rounded-2xl p-6 shadow-sm">
-        <h3 className="text-lg font-semibold text-charcoal mb-4">Recent Reviews</h3>
+        <h3 className="text-lg font-semibold text-charcoal mb-4">{t('admin.recentReviews')}</h3>
         {recentReviews.length === 0 ? (
-          <p className="text-gray-500 text-center py-8">No reviews in this period</p>
+          <p className="text-gray-500 text-center py-8">{t('admin.noReviewsInPeriod')}</p>
         ) : (
           <div className="space-y-3">
             {recentReviews.map((review) => {
@@ -210,17 +212,17 @@ export default function DashboardOverview() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="font-medium text-charcoal">
-                        {branch?.branchName || 'Unknown Branch'}
+                        {branch?.branchName || t('admin.unknownBranch')}
                       </span>
                       <span className="text-xs text-gray-400">•</span>
                       <span className="text-sm text-gray-500">
-                        {review.customerName || 'Anonymous'}
+                        {review.customerName || t('admin.anonymous')}
                       </span>
                     </div>
                     {review.comment ? (
                       <p className="text-gray-600 text-sm line-clamp-2">{review.comment}</p>
                     ) : (
-                      <p className="text-gray-400 text-sm italic">No comment</p>
+                      <p className="text-gray-400 text-sm italic">{t('admin.noComment')}</p>
                     )}
                   </div>
 

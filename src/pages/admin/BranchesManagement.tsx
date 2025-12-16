@@ -6,6 +6,7 @@
 
 import { useState, useEffect } from 'react'
 import { Plus, Edit2, Trash2, MapPin, Building2, ToggleLeft, ToggleRight, Loader2 } from 'lucide-react'
+import { useSafeTranslation } from '../../hooks/useSafeTranslation'
 import { getAllBranches, createBranch, updateBranch, deleteBranch } from '../../services/firestore'
 import { useAuth } from '../../context/AuthContext'
 import type { Branch } from '../../types'
@@ -18,6 +19,7 @@ interface BranchFormData {
 }
 
 export default function BranchesManagement() {
+  const { t } = useSafeTranslation()
   const { user } = useAuth()
   const [branches, setBranches] = useState<Branch[]>([])
   const [loading, setLoading] = useState(true)
@@ -159,8 +161,8 @@ export default function BranchesManagement() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-display font-bold text-charcoal">Branches Management</h1>
-          <p className="text-gray-500">Create and manage restaurant branches</p>
+          <h1 className="text-2xl font-display font-bold text-charcoal">{t('admin.branchesManagement')}</h1>
+          <p className="text-gray-500">{t('admin.branchesManagementDescription')}</p>
         </div>
         {!showForm && (
           <button
@@ -169,7 +171,7 @@ export default function BranchesManagement() {
                      font-medium hover:bg-brand-600 transition-colors shadow-md"
           >
             <Plus size={20} />
-            Add Branch
+            {t('admin.addBranch')}
           </button>
         )}
       </div>
@@ -185,12 +187,12 @@ export default function BranchesManagement() {
       {showForm && (
         <div className="bg-white rounded-2xl p-6 shadow-sm">
           <h2 className="text-xl font-semibold text-charcoal mb-4">
-            {editingBranch ? 'Edit Branch' : 'Add New Branch'}
+            {editingBranch ? t('admin.editBranch') : t('admin.createBranch')}
           </h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Branch Name *
+                {t('admin.branchName')} *
               </label>
               <input
                 type="text"
@@ -205,7 +207,7 @@ export default function BranchesManagement() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Location *
+                {t('admin.location')} *
               </label>
               <input
                 type="text"
@@ -220,7 +222,7 @@ export default function BranchesManagement() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Full Address (optional)
+                {t('admin.address')}
               </label>
               <textarea
                 value={formData.address}
@@ -240,7 +242,7 @@ export default function BranchesManagement() {
                   onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
                   className="w-5 h-5 text-brand-500 rounded focus:ring-brand-400"
                 />
-                <span className="text-sm font-medium text-gray-700">Active (visible to customers)</span>
+                <span className="text-sm font-medium text-gray-700">{t('admin.isActive')}</span>
               </label>
             </div>
 
@@ -252,7 +254,7 @@ export default function BranchesManagement() {
                          font-medium hover:bg-brand-600 transition-colors
                          disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isSubmitting ? 'Saving...' : editingBranch ? 'Update Branch' : 'Create Branch'}
+                {isSubmitting ? t('common.loading', 'Saving...') : editingBranch ? t('admin.updateBranch') : t('admin.createBranch')}
               </button>
               <button
                 type="button"
@@ -262,7 +264,7 @@ export default function BranchesManagement() {
                          font-medium hover:bg-gray-50 transition-colors
                          disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
             </div>
           </form>
@@ -274,8 +276,8 @@ export default function BranchesManagement() {
         {branches.length === 0 ? (
           <div className="py-20 text-center text-gray-500">
             <Building2 size={48} className="mx-auto mb-4 text-gray-300" />
-            <p className="text-lg">No branches yet</p>
-            <p className="text-sm mt-2">Click "Add Branch" to create your first branch</p>
+            <p className="text-lg">{t('admin.noBranches')}</p>
+            <p className="text-sm mt-2">{t('admin.noBranchesMessage')}</p>
           </div>
         ) : (
           <div className="divide-y divide-gray-100">
@@ -310,12 +312,12 @@ export default function BranchesManagement() {
                         {branch.isActive ? (
                           <>
                             <ToggleRight size={18} />
-                            Active
+                            {t('admin.active')}
                           </>
                         ) : (
                           <>
                             <ToggleLeft size={18} />
-                            Inactive
+                            {t('admin.inactive')}
                           </>
                         )}
                       </button>
