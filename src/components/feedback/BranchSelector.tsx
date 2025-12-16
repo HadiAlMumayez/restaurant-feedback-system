@@ -5,6 +5,7 @@
  * Used for initial tablet setup.
  */
 
+import { useTranslation } from 'react-i18next'
 import { MapPin, ChevronRight, Loader2 } from 'lucide-react'
 import type { Branch } from '../../types'
 
@@ -21,11 +22,14 @@ export default function BranchSelector({
   error,
   onSelect
 }: BranchSelectorProps) {
+  const { t } = useTranslation()
+  const isRTL = document.documentElement.dir === 'rtl'
+
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gradient-warm p-8">
         <Loader2 size={48} className="text-brand-500 spinner mb-4" />
-        <p className="text-xl text-gray-600">Loading branches...</p>
+        <p className="text-xl text-gray-600">{t('feedback.loadingBranches')}</p>
       </div>
     )
   }
@@ -39,7 +43,7 @@ export default function BranchSelector({
             onClick={() => window.location.reload()}
             className="px-6 py-3 bg-brand-500 text-white rounded-xl font-medium"
           >
-            Retry
+            {t('common.retry') || 'Retry'}
           </button>
         </div>
       </div>
@@ -53,10 +57,10 @@ export default function BranchSelector({
         <div className="text-center mb-12">
           <div className="text-6xl mb-6">🍽️</div>
           <h1 className="text-4xl md:text-5xl font-display font-bold text-charcoal mb-4">
-            Select Your Location
+            {t('feedback.selectBranch')}
           </h1>
           <p className="text-xl text-gray-600">
-            Choose the branch you're visiting today
+            {t('feedback.selectBranchDescription')}
           </p>
         </div>
 
@@ -68,7 +72,8 @@ export default function BranchSelector({
               onClick={() => onSelect(branch)}
               className="w-full p-6 bg-white rounded-2xl shadow-md hover:shadow-xl
                          transform hover:scale-[1.02] transition-all duration-200
-                         flex items-center gap-4 text-left animate-slide-up"
+                         flex items-center gap-4 animate-slide-up
+                         [dir=ltr]:text-left [dir=rtl]:text-right"
               style={{ animationDelay: `${index * 100}ms` }}
             >
               <div className="w-14 h-14 bg-brand-100 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -82,14 +87,14 @@ export default function BranchSelector({
                   {branch.location}
                 </p>
               </div>
-              <ChevronRight size={24} className="text-brand-400 flex-shrink-0" />
+              <ChevronRight size={24} className={`text-brand-400 flex-shrink-0 ${isRTL ? 'rotate-180' : ''}`} />
             </button>
           ))}
         </div>
 
         {branches.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-xl text-gray-500">No branches available</p>
+            <p className="text-xl text-gray-500">{t('feedback.noBranches')}</p>
           </div>
         )}
       </div>

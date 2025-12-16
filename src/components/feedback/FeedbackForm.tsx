@@ -121,7 +121,7 @@ export default function FeedbackForm({
           className="text-brand-600 hover:text-brand-700 text-lg font-medium 
                      underline underline-offset-4 transition-colors"
         >
-          {showOptional ? t('common.close') : t('common.add')} {t('feedback.contact')}
+          {showOptional ? t('feedback.hideContactDetails') : t('feedback.showContactDetails')}
         </button>
       </div>
 

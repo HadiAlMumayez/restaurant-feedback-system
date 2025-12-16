@@ -35,7 +35,7 @@ service cloud.firestore {
         && data.branchId.size() > 0
         && data.branchId.size() <= 50
         && isValidRating(data.rating)
-        && data.createdAt == request.time
+        && (data.createdAt == request.time || data.createdAt is timestamp)
         && isValidString(data.comment, 1000)
         && isValidString(data.customerName, 100)
         && isValidString(data.contact, 100)

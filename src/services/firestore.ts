@@ -138,19 +138,36 @@ export async function submitReview(data: ReviewFormData): Promise<string> {
     throw new Error('Rating must be between 1 and 5')
   }
 
+  // Validate branchId
+  if (!data.branchId || data.branchId.trim().length === 0) {
+    throw new Error('Branch ID is required')
+  }
+
   // Sanitize and prepare review document
   const review = {
-    branchId: data.branchId,
+    branchId: data.branchId.trim(),
     rating: Math.round(data.rating) as 1 | 2 | 3 | 4 | 5,
     comment: data.comment?.trim() || null,
     customerName: data.customerName?.trim() || null,
     contact: data.contact?.trim() || null,
     billId: data.billId?.trim() || null,
-    createdAt: Timestamp.now(),
+    createdAt: serverTimestamp(),
   }
 
-  const docRef = await addDoc(collection(db, REVIEWS_COLLECTION), review)
-  return docRef.id
+  try {
+    const docRef = await addDoc(collection(db, REVIEWS_COLLECTION), review)
+    return docRef.id
+  } catch (error: any) {
+    console.error('Error submitting review:', error)
+    // Provide more specific error messages
+    if (error?.code === 'permission-denied') {
+      throw new Error('Permission denied. Please check your connection.')
+    }
+    if (error?.code === 'invalid-argument') {
+      throw new Error('Invalid data. Please check all fields.')
+    }
+    throw new Error('Failed to submit feedback. Please try again.')
+  }
 }
 
 // Get reviews with filters and pagination (for admin dashboard)

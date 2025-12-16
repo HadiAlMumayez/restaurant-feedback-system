@@ -17,7 +17,8 @@
     "clear": "مسح",
     "confirm": "تأكيد",
     "yes": "نعم",
-    "no": "لا"
+    "no": "لا",
+    "retry": "إعادة المحاولة"
   },
   "feedback": {
     "title": "تعليقات المطعم",
@@ -33,6 +34,8 @@
     "customerNamePlaceholder": "أدخل اسمك",
     "contact": "جهة الاتصال (اختياري)",
     "contactPlaceholder": "البريد الإلكتروني أو رقم الهاتف",
+    "showContactDetails": "إضافة تفاصيل الاتصال (اختياري)",
+    "hideContactDetails": "إخفاء تفاصيل الاتصال",
     "billId": "رقم الفاتورة (اختياري)",
     "billIdPlaceholder": "أدخل رقم الفاتورة إن وجد",
     "submit": "إرسال التعليق",

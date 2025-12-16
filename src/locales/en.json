@@ -17,7 +17,8 @@
     "clear": "Clear",
     "confirm": "Confirm",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "retry": "Retry"
   },
   "feedback": {
     "title": "Restaurant Feedback",
@@ -33,6 +34,8 @@
     "customerNamePlaceholder": "Enter your name",
     "contact": "Contact (Optional)",
     "contactPlaceholder": "Email or phone number",
+    "showContactDetails": "Add contact details (optional)",
+    "hideContactDetails": "Hide contact details",
     "billId": "Bill ID (Optional)",
     "billIdPlaceholder": "Enter bill ID if available",
     "submit": "Submit Feedback",
