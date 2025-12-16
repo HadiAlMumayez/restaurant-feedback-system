@@ -55,9 +55,22 @@ export default function FeedbackPage() {
         } else {
           setPageState('select-branch')
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error('Failed to load branches:', err)
-        setError(t('feedback.error'))
+        // Provide more specific error message
+        let errorMessage = 'Failed to load. Please check your connection.'
+        if (err?.message?.includes('permission') || err?.code === 'permission-denied') {
+          errorMessage = 'Unable to load branches. Please check your connection and try again.'
+        } else if (err?.message) {
+          errorMessage = err.message
+        } else {
+          try {
+            errorMessage = t('feedback.error') || errorMessage
+          } catch {
+            // i18n not ready, use default
+          }
+        }
+        setError(errorMessage)
         setPageState('select-branch')
       }
     }
@@ -74,8 +87,14 @@ export default function FeedbackPage() {
 
   // Handle form submission
   const handleSubmit = async (data: ReviewFormData) => {
-    await submitReview(data)
-    setPageState('thank-you')
+    try {
+      await submitReview(data)
+      setPageState('thank-you')
+    } catch (err) {
+      console.error('Failed to submit review:', err)
+      // Error is handled by FeedbackForm component
+      throw err // Re-throw so FeedbackForm can show the error
+    }
   }
 
   // Reset to form

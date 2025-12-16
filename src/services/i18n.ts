@@ -35,6 +35,11 @@ i18n
     interpolation: {
       escapeValue: false, // React already escapes values
     },
+    // Ensure translations are available immediately
+    initImmediate: false,
+    // Add default values for missing keys
+    returnEmptyString: false,
+    returnNull: false,
   })
 
 // Update document direction when language changes

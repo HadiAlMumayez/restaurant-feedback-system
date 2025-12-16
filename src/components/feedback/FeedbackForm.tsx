@@ -54,9 +54,14 @@ export default function FeedbackForm({
         contact: contact.trim(),
         billId: billId.trim(),
       })
-    } catch (err) {
-      setError(t('feedback.error'))
+    } catch (err: any) {
       console.error('Submit error:', err)
+      // Use more specific error message if available
+      if (err?.message) {
+        setError(err.message)
+      } else {
+        setError(t('feedback.error'))
+      }
     } finally {
       setIsSubmitting(false)
     }
