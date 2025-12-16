@@ -16,6 +16,7 @@ import {
   X,
 } from 'lucide-react'
 import DOMPurify from 'dompurify'
+import { useSafeTranslation } from '../../hooks/useSafeTranslation'
 import DateRangePicker from '../../components/admin/DateRangePicker'
 import { getReviews, getBranches } from '../../services/firestore'
 import type { Review, Branch, DateRange } from '../../types'
@@ -24,6 +25,7 @@ import { DocumentSnapshot } from 'firebase/firestore'
 const PAGE_SIZE = 15
 
 export default function ReviewsList() {
+  const { t } = useSafeTranslation()
   const [dateRange, setDateRange] = useState<DateRange>({
     startDate: subDays(new Date(), 30),
     endDate: new Date(),
@@ -124,7 +126,7 @@ export default function ReviewsList() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-display font-bold text-charcoal">Reviews</h1>
+          <h1 className="text-2xl font-display font-bold text-charcoal">{t('admin.reviews')}</h1>
           <p className="text-gray-500">Browse and search all customer reviews</p>
         </div>
         <DateRangePicker value={dateRange} onChange={setDateRange} />

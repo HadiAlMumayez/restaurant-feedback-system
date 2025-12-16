@@ -7,11 +7,13 @@
 
 import { useState, useEffect } from 'react'
 import { UserPlus, Trash2, Mail, User, ExternalLink, Info, Loader2, Copy, Check } from 'lucide-react'
+import { useSafeTranslation } from '../../hooks/useSafeTranslation'
 import { getAdminRecords, addAdminRecord, removeAdminRecord } from '../../services/admin'
 import { useAuth } from '../../context/AuthContext'
 import type { AdminRecord } from '../../services/admin'
 
 export default function AdminsManagement() {
+  const { t } = useSafeTranslation()
   const { user } = useAuth()
   const [admins, setAdmins] = useState<AdminRecord[]>([])
   const [loading, setLoading] = useState(true)
@@ -116,8 +118,8 @@ export default function AdminsManagement() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-display font-bold text-charcoal">Admins Management</h1>
-          <p className="text-gray-500">Manage admin user access</p>
+          <h1 className="text-2xl font-display font-bold text-charcoal">{t('admin.adminsManagement')}</h1>
+          <p className="text-gray-500">{t('admin.adminsManagementDescription')}</p>
         </div>
         {!showForm && (
           <button
@@ -126,7 +128,7 @@ export default function AdminsManagement() {
                      font-medium hover:bg-brand-600 transition-colors shadow-md"
           >
             <UserPlus size={20} />
-            Track Admin
+            {t('admin.trackAdmin')}
           </button>
         )}
       </div>
@@ -136,14 +138,14 @@ export default function AdminsManagement() {
         <div className="flex items-start gap-3">
           <Info size={20} className="text-blue-600 flex-shrink-0 mt-0.5" />
           <div className="flex-1">
-            <p className="text-sm text-blue-900 font-medium mb-1">How to Add New Admins</p>
+            <p className="text-sm text-blue-900 font-medium mb-1">{t('admin.howToAddAdmins')}</p>
             <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
-              <li>Go to <a href={getFirebaseAuthUrl()} target="_blank" rel="noopener noreferrer" className="underline font-medium">Firebase Console → Authentication → Users</a></li>
-              <li>Click "Add user" and enter the admin's email and password</li>
-              <li>Come back here and click "Track Admin" to add their email to the tracking list</li>
+              <li>{t('admin.howToAddAdminsStep1')}</li>
+              <li>{t('admin.howToAddAdminsStep2')}</li>
+              <li>{t('admin.howToAddAdminsStep3')}</li>
             </ol>
             <p className="text-xs text-blue-700 mt-2">
-              Note: This page tracks admin emails. The actual user account must be created in Firebase Console.
+              {t('admin.adminNote')}
             </p>
           </div>
         </div>
@@ -159,14 +161,14 @@ export default function AdminsManagement() {
       {/* Form */}
       {showForm && (
         <div className="bg-white rounded-2xl p-6 shadow-sm">
-          <h2 className="text-xl font-semibold text-charcoal mb-4">Track New Admin</h2>
+          <h2 className="text-xl font-semibold text-charcoal mb-4">{t('admin.trackNewAdmin')}</h2>
           <p className="text-sm text-gray-500 mb-4">
-            Add an admin email to the tracking list. Make sure the user account is already created in Firebase Console.
+            {t('admin.adminNote')}
           </p>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email Address *
+                {t('admin.adminEmail')} *
               </label>
               <input
                 type="email"
@@ -181,7 +183,7 @@ export default function AdminsManagement() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Display Name (optional)
+                {t('admin.displayName')}
               </label>
               <input
                 type="text"
@@ -201,7 +203,7 @@ export default function AdminsManagement() {
                          font-medium hover:bg-brand-600 transition-colors
                          disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isSubmitting ? 'Adding...' : 'Add Admin'}
+                {isSubmitting ? t('admin.adding') : t('admin.addAdmin')}
               </button>
               <button
                 type="button"
@@ -215,7 +217,7 @@ export default function AdminsManagement() {
                          font-medium hover:bg-gray-50 transition-colors
                          disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
             </div>
           </form>
@@ -225,14 +227,14 @@ export default function AdminsManagement() {
       {/* Admins list */}
       <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
         <div className="p-4 border-b border-gray-100">
-          <h2 className="text-lg font-semibold text-charcoal">Tracked Admins</h2>
-          <p className="text-sm text-gray-500">Admin emails tracked in the system</p>
+          <h2 className="text-lg font-semibold text-charcoal">{t('admin.trackedAdmins')}</h2>
+          <p className="text-sm text-gray-500">{t('admin.trackedAdminsDescription')}</p>
         </div>
         {admins.length === 0 ? (
           <div className="py-20 text-center text-gray-500">
             <User size={48} className="mx-auto mb-4 text-gray-300" />
             <p className="text-lg">No admins tracked yet</p>
-            <p className="text-sm mt-2">Click "Track Admin" to add an admin email</p>
+            <p className="text-sm mt-2">{t('admin.noAdminsMessage')}</p>
           </div>
         ) : (
           <div className="divide-y divide-gray-100">

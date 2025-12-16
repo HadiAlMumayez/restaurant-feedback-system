@@ -8,6 +8,7 @@ import { useState } from 'react'
 import { subMonths, format } from 'date-fns'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts'
 import { Users, Star, MessageSquare, Loader2, Award } from 'lucide-react'
+import { useSafeTranslation } from '../../hooks/useSafeTranslation'
 import DateRangePicker from '../../components/admin/DateRangePicker'
 import { useCustomerFrequency } from '../../hooks/useDashboardData'
 import type { DateRange } from '../../types'
@@ -15,6 +16,7 @@ import type { DateRange } from '../../types'
 const COLORS = ['#ed7821', '#22c55e', '#3b82f6', '#a855f7', '#f43f5e', '#eab308']
 
 export default function CustomerFrequency() {
+  const { t } = useSafeTranslation()
   const [dateRange, setDateRange] = useState<DateRange>({
     startDate: subMonths(new Date(), 3),
     endDate: new Date(),
@@ -52,8 +54,8 @@ export default function CustomerFrequency() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-display font-bold text-charcoal">Customer Frequency</h1>
-          <p className="text-gray-500">Track returning customers and their feedback patterns</p>
+          <h1 className="text-2xl font-display font-bold text-charcoal">{t('admin.customerFrequency')}</h1>
+          <p className="text-gray-500">{t('admin.customerFrequencyDescription')}</p>
         </div>
         <DateRangePicker value={dateRange} onChange={setDateRange} />
       </div>
@@ -66,7 +68,7 @@ export default function CustomerFrequency() {
               <Users size={24} className="text-brand-500" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Unique Customers</p>
+              <p className="text-sm text-gray-500">{t('admin.uniqueCustomers', 'Unique Customers')}</p>
               <p className="text-2xl font-bold text-charcoal">{totalCustomers}</p>
             </div>
           </div>
@@ -90,7 +92,7 @@ export default function CustomerFrequency() {
               <MessageSquare size={24} className="text-blue-500" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Avg Reviews/Customer</p>
+              <p className="text-sm text-gray-500">{t('admin.avgReviewsPerCustomer', 'Avg Reviews/Customer')}</p>
               <p className="text-2xl font-bold text-charcoal">{avgReviewsPerCustomer}</p>
             </div>
           </div>
