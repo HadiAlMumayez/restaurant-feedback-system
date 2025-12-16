@@ -105,7 +105,11 @@ export default function FeedbackPage() {
   // Render based on state
   if (pageState === 'loading') {
     return (
-      <div className="min-h-screen flex items-center justify-center gradient-warm">
+      <div className="min-h-screen flex items-center justify-center gradient-warm relative">
+        {/* Language Switcher */}
+        <div className="absolute top-4 right-4 z-10 [dir=rtl]:right-auto [dir=rtl]:left-4">
+          <LanguageSwitcher />
+        </div>
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-brand-200 border-t-brand-500 rounded-full spinner mx-auto mb-4" />
           <p className="text-xl text-gray-600">{t('common.loading', 'Loading...')}</p>

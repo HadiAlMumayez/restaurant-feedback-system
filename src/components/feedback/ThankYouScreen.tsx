@@ -8,6 +8,7 @@
 import { useEffect, useState } from 'react'
 import { useSafeTranslation } from '../../hooks/useSafeTranslation'
 import { CheckCircle, RotateCcw } from 'lucide-react'
+import LanguageSwitcher from '../LanguageSwitcher'
 
 interface ThankYouScreenProps {
   onReset: () => void
@@ -35,7 +36,11 @@ export default function ThankYouScreen({
   }, [countdown, onReset])
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-8 gradient-warm">
+    <div className="min-h-screen flex flex-col items-center justify-center p-8 gradient-warm relative">
+      {/* Language Switcher */}
+      <div className="absolute top-4 right-4 z-10 [dir=rtl]:right-auto [dir=rtl]:left-4">
+        <LanguageSwitcher />
+      </div>
       <div className="text-center animate-slide-up">
         {/* Success icon */}
         <div className="mb-8">

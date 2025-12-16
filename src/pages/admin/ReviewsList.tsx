@@ -127,7 +127,7 @@ export default function ReviewsList() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-display font-bold text-charcoal">{t('admin.reviews')}</h1>
-          <p className="text-gray-500">Browse and search all customer reviews</p>
+          <p className="text-gray-500">{t('admin.reviewsListDescription')}</p>
         </div>
         <DateRangePicker value={dateRange} onChange={setDateRange} />
       </div>

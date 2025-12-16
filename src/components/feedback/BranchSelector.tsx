@@ -7,6 +7,7 @@
 
 import { useSafeTranslation } from '../../hooks/useSafeTranslation'
 import { MapPin, ChevronRight, Loader2 } from 'lucide-react'
+import LanguageSwitcher from '../LanguageSwitcher'
 import type { Branch } from '../../types'
 
 interface BranchSelectorProps {
@@ -27,7 +28,11 @@ export default function BranchSelector({
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gradient-warm p-8">
+      <div className="min-h-screen flex flex-col items-center justify-center gradient-warm p-8 relative">
+        {/* Language Switcher */}
+        <div className="absolute top-4 right-4 z-10 [dir=rtl]:right-auto [dir=rtl]:left-4">
+          <LanguageSwitcher />
+        </div>
         <Loader2 size={48} className="text-brand-500 spinner mb-4" />
         <p className="text-xl text-gray-600">{t('feedback.loadingBranches')}</p>
       </div>
@@ -36,7 +41,11 @@ export default function BranchSelector({
 
   if (error) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gradient-warm p-8">
+      <div className="min-h-screen flex flex-col items-center justify-center gradient-warm p-8 relative">
+        {/* Language Switcher */}
+        <div className="absolute top-4 right-4 z-10 [dir=rtl]:right-auto [dir=rtl]:left-4">
+          <LanguageSwitcher />
+        </div>
         <div className="text-center">
           <p className="text-xl text-red-600 mb-4">{error}</p>
           <button
@@ -52,6 +61,11 @@ export default function BranchSelector({
 
   return (
     <div className="min-h-screen gradient-warm pattern-dots p-8">
+      {/* Language Switcher */}
+      <div className="absolute top-4 right-4 z-10 [dir=rtl]:right-auto [dir=rtl]:left-4">
+        <LanguageSwitcher />
+      </div>
+
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
