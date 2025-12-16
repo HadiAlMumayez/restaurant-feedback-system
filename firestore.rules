@@ -44,13 +44,13 @@ service cloud.firestore {
     
     /**
      * BRANCHES COLLECTION
-     * - Read: Authenticated admins only (active branches also readable by public)
+     * - Read: Public can read all branches (we filter active client-side)
      * - Write: Authenticated admins only
      */
     match /branches/{branchId} {
-      // Allow reading active branches for tablet (public read for active branches)
-      // Also allow authenticated users to read all branches
-      allow read: if resource == null || resource.data.isActive == true || isAuthenticated();
+      // Allow public read of all branches (we filter active branches client-side)
+      // This allows the collection query to work
+      allow read: if true;
       
       // Only authenticated admins can create/update branches
       allow create: if isAuthenticated()

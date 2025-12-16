@@ -35,19 +35,36 @@ const REVIEWS_COLLECTION = 'reviews'
 
 // Get all active branches (simplified query - no index needed)
 export async function getBranches(): Promise<Branch[]> {
-  // Simple query without composite index requirement
-  const snapshot = await getDocs(collection(db, BRANCHES_COLLECTION))
-  
-  // Filter and sort client-side to avoid index requirements
-  const branches = snapshot.docs
-    .map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    })) as Branch[]
-  
-  return branches
-    .filter(b => b.isActive)
-    .sort((a, b) => a.name.localeCompare(b.name))
+  try {
+    // Simple query without composite index requirement
+    const snapshot = await getDocs(collection(db, BRANCHES_COLLECTION))
+    
+    // Filter and sort client-side to avoid index requirements
+    const branches = snapshot.docs
+      .map(doc => {
+        const data = doc.data()
+        return {
+          id: doc.id,
+          name: data.name || '',
+          location: data.location || '',
+          address: data.address || null,
+          isActive: data.isActive !== undefined ? data.isActive : true,
+          createdAt: data.createdAt,
+          updatedAt: data.updatedAt,
+        }
+      }) as Branch[]
+    
+    return branches
+      .filter(b => b.isActive !== false) // Include if isActive is true or undefined
+      .sort((a, b) => a.name.localeCompare(b.name))
+  } catch (error: any) {
+    console.error('Error fetching branches:', error)
+    // Re-throw with more context
+    if (error?.code === 'permission-denied') {
+      throw new Error('Permission denied: Unable to read branches. Please check Firestore security rules.')
+    }
+    throw error
+  }
 }
 
 // Get a single branch by ID

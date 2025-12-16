@@ -40,6 +40,10 @@ i18n
     // Add default values for missing keys
     returnEmptyString: false,
     returnNull: false,
+    // Return key if translation not found (so we can detect it)
+    returnObjects: false,
+    keySeparator: '.',
+    nsSeparator: ':',
   })
 
 // Update document direction when language changes

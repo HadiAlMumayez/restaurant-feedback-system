@@ -44,12 +44,9 @@ export default function BranchSelector({
             className="px-6 py-3 bg-brand-500 text-white rounded-xl font-medium hover:bg-brand-600 transition-colors"
           >
             {(() => {
-              try {
-                const retryText = t('common.retry')
-                return retryText && retryText !== 'common.retry' ? retryText : 'Retry'
-              } catch {
-                return 'Retry'
-              }
+              const retryText = t('common.retry', 'Retry')
+              // If translation returns the key itself, use fallback
+              return retryText === 'common.retry' ? 'Retry' : retryText
             })()}
           </button>
         </div>
