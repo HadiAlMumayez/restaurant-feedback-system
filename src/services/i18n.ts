@@ -43,10 +43,6 @@ i18n
     returnObjects: false,
     keySeparator: '.',
     nsSeparator: ':',
-    // Don't return the key if translation is missing - use fallback
-    returnKeyIfMissing: false,
-    // Use fallback language if key is missing
-    fallbackOnEmpty: true,
   })
 
 // Update document direction when language changes

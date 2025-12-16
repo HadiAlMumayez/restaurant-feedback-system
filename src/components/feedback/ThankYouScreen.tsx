@@ -6,9 +6,8 @@
  */
 
 import { useEffect, useState } from 'react'
-import { useTranslation } from 'react-i18next'
+import { useSafeTranslation } from '../../hooks/useSafeTranslation'
 import { CheckCircle, RotateCcw } from 'lucide-react'
-import { safeTranslate } from '../../utils/translations'
 
 interface ThankYouScreenProps {
   onReset: () => void
@@ -19,7 +18,7 @@ export default function ThankYouScreen({
   onReset,
   autoResetSeconds = 5
 }: ThankYouScreenProps) {
-  const { t } = useTranslation()
+  const { t } = useSafeTranslation()
   const [countdown, setCountdown] = useState(autoResetSeconds)
 
   useEffect(() => {
@@ -60,7 +59,7 @@ export default function ThankYouScreen({
           <div className="inline-flex items-center gap-2 px-6 py-3 bg-white/80 rounded-full shadow-md">
             <RotateCcw size={20} className="text-brand-500 spinner" />
             <span className="text-lg text-gray-600">
-              {safeTranslate(t, 'common.loading', 'Resetting in')} <span className="font-bold text-brand-600">{countdown}</span>s
+              {t('common.loading', 'Resetting in')} <span className="font-bold text-brand-600">{countdown}</span>s
             </span>
           </div>
         </div>

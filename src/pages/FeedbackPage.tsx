@@ -7,19 +7,18 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useTranslation } from 'react-i18next'
+import { useSafeTranslation } from '../hooks/useSafeTranslation'
 import FeedbackForm from '../components/feedback/FeedbackForm'
 import ThankYouScreen from '../components/feedback/ThankYouScreen'
 import BranchSelector from '../components/feedback/BranchSelector'
 import LanguageSwitcher from '../components/LanguageSwitcher'
-import { safeTranslate } from '../utils/translations'
 import { getBranches, getBranch, submitReview } from '../services/firestore'
 import type { Branch, ReviewFormData } from '../types'
 
 type PageState = 'loading' | 'select-branch' | 'form' | 'thank-you'
 
 export default function FeedbackPage() {
-  const { t } = useTranslation()
+  const { t } = useSafeTranslation()
   const { branchId: urlBranchId } = useParams<{ branchId: string }>()
   const navigate = useNavigate()
 
@@ -109,7 +108,7 @@ export default function FeedbackPage() {
       <div className="min-h-screen flex items-center justify-center gradient-warm">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-brand-200 border-t-brand-500 rounded-full spinner mx-auto mb-4" />
-          <p className="text-xl text-gray-600">{safeTranslate(t, 'common.loading', 'Loading...')}</p>
+          <p className="text-xl text-gray-600">{t('common.loading', 'Loading...')}</p>
         </div>
       </div>
     )

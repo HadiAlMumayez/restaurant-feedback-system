@@ -5,13 +5,12 @@
  * Supports both English and Arabic with RTL.
  */
 
-import { useTranslation } from 'react-i18next'
+import { useSafeTranslation } from '../hooks/useSafeTranslation'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Home, MessageSquare, ArrowRight, ArrowLeft } from 'lucide-react'
-import { safeTranslate } from '../utils/translations'
 
 export default function NotFoundPage() {
-  const { t } = useTranslation()
+  const { t } = useSafeTranslation()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const isRTL = document.documentElement.dir === 'rtl'
@@ -86,7 +85,7 @@ export default function NotFoundPage() {
         {/* Helpful Links */}
         <div className="mt-12 pt-8 border-t border-gray-200">
           <p className="text-sm text-gray-500 mb-4">
-            {safeTranslate(t, 'common.or', 'Or try:')}
+            {t('common.or', 'Or try:')}
           </p>
           <div className="flex flex-wrap gap-3 justify-center">
             <button

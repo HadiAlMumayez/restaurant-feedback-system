@@ -16,16 +16,36 @@ export function safeTranslate(
   fallback?: string
 ): string {
   try {
-    const result = t(key, fallback || key.split('.').pop() || key)
+    // Generate a sensible fallback if not provided
+    const defaultFallback = fallback || key.split('.').pop() || key
     
-    // If result contains the key pattern (e.g., "common.loading"), use fallback
-    if (result && result.includes('common.') && result.startsWith('common.')) {
-      return fallback || key.split('.').pop() || key
+    // Get the translation
+    let result: string
+    try {
+      result = t(key, defaultFallback)
+    } catch {
+      return defaultFallback
     }
     
-    // If result is the same as the key, use fallback
+    // If result is empty, null, or undefined, use fallback
+    if (!result || typeof result !== 'string' || result.trim() === '') {
+      return defaultFallback
+    }
+    
+    // If result contains "common." prefix (translation failed), use fallback
+    if (result.startsWith('common.')) {
+      return defaultFallback
+    }
+    
+    // If result is exactly the same as the key (translation not found), use fallback
     if (result === key) {
-      return fallback || key.split('.').pop() || key
+      return defaultFallback
+    }
+    
+    // If result looks like a key pattern (starts with the namespace), use fallback
+    const keyParts = key.split('.')
+    if (keyParts.length >= 2 && result.startsWith(keyParts[0] + '.')) {
+      return defaultFallback
     }
     
     return result

@@ -6,14 +6,13 @@
 
 import { useState, FormEvent, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useTranslation } from 'react-i18next'
+import { useSafeTranslation } from '../hooks/useSafeTranslation'
 import { Mail, Lock, LogIn, Loader2 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import LanguageSwitcher from '../components/LanguageSwitcher'
-import { safeTranslate } from '../utils/translations'
 
 export default function LoginPage() {
-  const { t } = useTranslation()
+  const { t } = useSafeTranslation()
   const navigate = useNavigate()
   const { user, loginWithEmail, loginWithGoogle, loading, error, clearError } = useAuth()
 
@@ -177,7 +176,7 @@ export default function LoginPage() {
               <div className="w-full border-t border-gray-200" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-white text-gray-500">{safeTranslate(t, 'common.or', 'or continue with')}</span>
+              <span className="px-4 bg-white text-gray-500">{t('common.or', 'or continue with')}</span>
             </div>
           </div>
 
