@@ -48,8 +48,9 @@ service cloud.firestore {
      * - Write: Authenticated admins only
      */
     match /branches/{branchId} {
-      // Allow reading active branches for tablet
-      allow read: if resource.data.isActive == true || isAuthenticated();
+      // Allow reading active branches for tablet (public read for active branches)
+      // Also allow authenticated users to read all branches
+      allow read: if resource == null || resource.data.isActive == true || isAuthenticated();
       
       // Only authenticated admins can create/update branches
       allow create: if isAuthenticated()

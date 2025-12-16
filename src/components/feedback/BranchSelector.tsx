@@ -43,7 +43,14 @@ export default function BranchSelector({
             onClick={() => window.location.reload()}
             className="px-6 py-3 bg-brand-500 text-white rounded-xl font-medium hover:bg-brand-600 transition-colors"
           >
-            {t('common.retry') || 'Retry'}
+            {(() => {
+              try {
+                const retryText = t('common.retry')
+                return retryText && retryText !== 'common.retry' ? retryText : 'Retry'
+              } catch {
+                return 'Retry'
+              }
+            })()}
           </button>
         </div>
       </div>
