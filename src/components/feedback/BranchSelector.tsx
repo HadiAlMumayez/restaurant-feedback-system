@@ -7,6 +7,7 @@
 
 import { useTranslation } from 'react-i18next'
 import { MapPin, ChevronRight, Loader2 } from 'lucide-react'
+import { safeTranslate } from '../../utils/translations'
 import type { Branch } from '../../types'
 
 interface BranchSelectorProps {
@@ -43,11 +44,7 @@ export default function BranchSelector({
             onClick={() => window.location.reload()}
             className="px-6 py-3 bg-brand-500 text-white rounded-xl font-medium hover:bg-brand-600 transition-colors"
           >
-            {(() => {
-              const retryText = t('common.retry', 'Retry')
-              // If translation returns the key itself, use fallback
-              return retryText === 'common.retry' ? 'Retry' : retryText
-            })()}
+            {safeTranslate(t, 'common.retry', 'Retry')}
           </button>
         </div>
       </div>
