@@ -5,7 +5,7 @@
  * Environment variables are loaded from .env file (prefixed with VITE_)
  */
 
-import { initializeApp } from 'firebase/app'
+import { initializeApp, getApp } from 'firebase/app'
 import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore'
 import { getAuth, connectAuthEmulator } from 'firebase/auth'
 
@@ -29,13 +29,28 @@ for (const key of requiredKeys) {
 }
 
 // Initialize Firebase
-const app = initializeApp(firebaseConfig)
+let app
+try {
+  app = initializeApp(firebaseConfig)
+  console.log('[Firebase] App initialized successfully')
+} catch (error: any) {
+  console.error('[Firebase] Failed to initialize app:', error)
+  // If app already exists, get it
+  if (error?.code === 'app/duplicate-app') {
+    app = getApp()
+    console.log('[Firebase] Using existing app instance')
+  } else {
+    throw error
+  }
+}
 
 // Initialize Firestore
 export const db = getFirestore(app)
+console.log('[Firebase] Firestore initialized:', !!db)
 
 // Initialize Auth
 export const auth = getAuth(app)
+console.log('[Firebase] Auth initialized:', !!auth)
 
 // Connect to emulators in development (optional)
 if (import.meta.env.DEV && import.meta.env.VITE_USE_EMULATORS === 'true') {

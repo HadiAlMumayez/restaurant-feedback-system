@@ -36,19 +36,22 @@ const REVIEWS_COLLECTION = 'reviews'
 // Get all active branches (simplified query - no index needed)
 export async function getBranches(): Promise<Branch[]> {
   try {
+    // Log for debugging (works in production too)
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+    console.log('[getBranches] Starting fetch, isMobile:', isMobile)
+    console.log('[getBranches] Firebase db initialized:', !!db)
+    
     // Simple query without composite index requirement
     const snapshot = await getDocs(collection(db, BRANCHES_COLLECTION))
     
-    // Debug logging
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Firestore snapshot size:', snapshot.size)
-    }
+    console.log('[getBranches] Snapshot received, size:', snapshot.size)
+    console.log('[getBranches] Snapshot empty:', snapshot.empty)
     
     // Filter and sort client-side to avoid index requirements
     const branches = snapshot.docs
       .map(doc => {
         const data = doc.data()
-        return {
+        const branch = {
           id: doc.id,
           name: data.name || '',
           location: data.location || '',
@@ -57,20 +60,32 @@ export async function getBranches(): Promise<Branch[]> {
           createdAt: data.createdAt,
           updatedAt: data.updatedAt,
         }
+        console.log('[getBranches] Branch:', branch.id, branch.name, 'isActive:', branch.isActive)
+        return branch
       }) as Branch[]
     
+    console.log('[getBranches] Total branches mapped:', branches.length)
+    
     const activeBranches = branches
-      .filter(b => b.isActive !== false) // Include if isActive is true or undefined
+      .filter(b => {
+        const isActive = b.isActive !== false
+        if (!isActive) {
+          console.log('[getBranches] Filtered out inactive branch:', b.id, b.name)
+        }
+        return isActive
+      })
       .sort((a, b) => a.name.localeCompare(b.name))
     
-    // Debug logging
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Total branches:', branches.length, 'Active branches:', activeBranches.length)
-    }
+    console.log('[getBranches] Active branches after filter:', activeBranches.length)
+    console.log('[getBranches] Active branch names:', activeBranches.map(b => b.name))
     
     return activeBranches
   } catch (error: any) {
-    console.error('Error fetching branches:', error)
+    console.error('[getBranches] ERROR:', error)
+    console.error('[getBranches] Error code:', error?.code)
+    console.error('[getBranches] Error message:', error?.message)
+    console.error('[getBranches] Error stack:', error?.stack)
+    
     // Re-throw with more context
     if (error?.code === 'permission-denied') {
       throw new Error('Permission denied: Unable to read branches. Please check Firestore security rules.')
@@ -81,7 +96,11 @@ export async function getBranches(): Promise<Branch[]> {
     if (error?.code === 'deadline-exceeded') {
       throw new Error('Request timeout. Please check your internet connection and try again.')
     }
-    throw error
+    if (error?.code === 'failed-precondition') {
+      throw new Error('Database error. Please refresh the page and try again.')
+    }
+    // Include original error message for debugging
+    throw new Error(error?.message || 'Failed to load branches. Please check your connection.')
   }
 }
 

@@ -32,41 +32,52 @@ export default function FeedbackPage() {
     async function loadData() {
       try {
         setError(null)
+        console.log('[FeedbackPage] Starting loadData, urlBranchId:', urlBranchId)
 
         // If branchId in URL, load that specific branch
         if (urlBranchId) {
+          console.log('[FeedbackPage] Loading specific branch:', urlBranchId)
           const branch = await getBranch(urlBranchId)
+          console.log('[FeedbackPage] Branch loaded:', branch ? branch.name : 'null')
           if (branch && branch.isActive) {
             setSelectedBranch(branch)
             setPageState('form')
             return
           }
           // Invalid branch ID, fall through to branch selection
+          console.log('[FeedbackPage] Branch not found or inactive, falling back to selection')
         }
 
         // Load all branches for selection
+        console.log('[FeedbackPage] Loading all branches...')
         const allBranches = await getBranches()
-        
-        // Debug logging for mobile issues
-        if (process.env.NODE_ENV === 'development') {
-          console.log('Loaded branches:', allBranches.length, allBranches)
-        }
+        console.log('[FeedbackPage] Branches loaded:', allBranches.length, allBranches)
         
         setBranches(allBranches)
         
         // If only one branch, auto-select it
         if (allBranches.length === 1) {
+          console.log('[FeedbackPage] Auto-selecting single branch:', allBranches[0].name)
           setSelectedBranch(allBranches[0])
           setPageState('form')
         } else if (allBranches.length === 0) {
           // No branches found - show error
+          console.warn('[FeedbackPage] No branches found!')
           setError(t('feedback.noBranches', 'No active branches available'))
           setPageState('select-branch')
         } else {
+          console.log('[FeedbackPage] Showing branch selection with', allBranches.length, 'branches')
           setPageState('select-branch')
         }
       } catch (err: any) {
-        console.error('Failed to load branches:', err)
+        console.error('[FeedbackPage] ERROR loading branches:', err)
+        console.error('[FeedbackPage] Error details:', {
+          code: err?.code,
+          message: err?.message,
+          stack: err?.stack,
+          name: err?.name
+        })
+        
         // Provide more specific error message
         let errorMessage = 'Failed to load. Please check your connection.'
         if (err?.message?.includes('permission') || err?.code === 'permission-denied') {
@@ -82,6 +93,7 @@ export default function FeedbackPage() {
             // i18n not ready, use default
           }
         }
+        console.error('[FeedbackPage] Setting error message:', errorMessage)
         setError(errorMessage)
         setPageState('select-branch')
       }

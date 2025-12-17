@@ -109,9 +109,25 @@ export default function BranchSelector({
         {branches.length === 0 && !error && (
           <div className="text-center py-12">
             <p className="text-xl text-gray-500 mb-4">{t('feedback.noBranches')}</p>
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-gray-400 mb-4">
               {t('feedback.noBranchesHint', 'Please contact the administrator to add branches.')}
             </p>
+            {/* Debug info for mobile troubleshooting */}
+            <details className="text-xs text-gray-400 mt-4">
+              <summary className="cursor-pointer">Debug Info</summary>
+              <div className="mt-2 text-left space-y-1">
+                <p>Branches array length: {branches.length}</p>
+                <p>Error: {error || 'None'}</p>
+                <p>Loading: {loading ? 'Yes' : 'No'}</p>
+                <p>User Agent: {typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown'}</p>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="mt-2 px-4 py-2 bg-brand-500 text-white rounded-lg text-sm"
+                >
+                  Reload Page
+                </button>
+              </div>
+            </details>
           </div>
         )}
       </div>
