@@ -6,7 +6,7 @@
  */
 
 import { initializeApp, getApp } from 'firebase/app'
-import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore'
+import { getFirestore, connectFirestoreEmulator, enableIndexedDbPersistence } from 'firebase/firestore'
 import { getAuth, connectAuthEmulator } from 'firebase/auth'
 
 // Firebase configuration from environment variables
@@ -47,6 +47,21 @@ try {
 // Initialize Firestore
 export const db = getFirestore(app)
 console.log('[Firebase] Firestore initialized:', !!db)
+
+// Try to enable persistence (will fail if multiple tabs open, that's OK)
+try {
+  enableIndexedDbPersistence(db).catch((err: any) => {
+    if (err.code === 'failed-precondition') {
+      console.warn('[Firebase] Persistence already enabled in another tab')
+    } else if (err.code === 'unimplemented') {
+      console.warn('[Firebase] Persistence not supported in this browser')
+    } else {
+      console.error('[Firebase] Persistence error:', err)
+    }
+  })
+} catch (err) {
+  console.warn('[Firebase] Could not enable persistence:', err)
+}
 
 // Initialize Auth
 export const auth = getAuth(app)
