@@ -39,6 +39,11 @@ export async function getBranches(): Promise<Branch[]> {
     // Simple query without composite index requirement
     const snapshot = await getDocs(collection(db, BRANCHES_COLLECTION))
     
+    // Debug logging
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Firestore snapshot size:', snapshot.size)
+    }
+    
     // Filter and sort client-side to avoid index requirements
     const branches = snapshot.docs
       .map(doc => {
@@ -54,14 +59,27 @@ export async function getBranches(): Promise<Branch[]> {
         }
       }) as Branch[]
     
-    return branches
+    const activeBranches = branches
       .filter(b => b.isActive !== false) // Include if isActive is true or undefined
       .sort((a, b) => a.name.localeCompare(b.name))
+    
+    // Debug logging
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Total branches:', branches.length, 'Active branches:', activeBranches.length)
+    }
+    
+    return activeBranches
   } catch (error: any) {
     console.error('Error fetching branches:', error)
     // Re-throw with more context
     if (error?.code === 'permission-denied') {
       throw new Error('Permission denied: Unable to read branches. Please check Firestore security rules.')
+    }
+    if (error?.code === 'unavailable') {
+      throw new Error('Service unavailable. Please check your internet connection and try again.')
+    }
+    if (error?.code === 'deadline-exceeded') {
+      throw new Error('Request timeout. Please check your internet connection and try again.')
     }
     throw error
   }

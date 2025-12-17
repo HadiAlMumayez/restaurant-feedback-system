@@ -258,7 +258,11 @@ export default function AdminsManagement() {
                         )}
                       </div>
                       <p className="text-sm text-gray-500">
-                        Added {admin.createdAt.toDate().toLocaleDateString()}
+                        Added {admin.createdAt.toDate().toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                        })}
                         {admin.createdBy && ` by ${admin.createdBy}`}
                       </p>
                     </div>

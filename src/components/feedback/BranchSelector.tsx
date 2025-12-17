@@ -106,9 +106,12 @@ export default function BranchSelector({
           ))}
         </div>
 
-        {branches.length === 0 && (
+        {branches.length === 0 && !error && (
           <div className="text-center py-12">
-            <p className="text-xl text-gray-500">{t('feedback.noBranches')}</p>
+            <p className="text-xl text-gray-500 mb-4">{t('feedback.noBranches')}</p>
+            <p className="text-sm text-gray-400">
+              {t('feedback.noBranchesHint', 'Please contact the administrator to add branches.')}
+            </p>
           </div>
         )}
       </div>

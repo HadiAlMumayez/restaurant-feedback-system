@@ -21,7 +21,6 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import LanguageSwitcher from '../LanguageSwitcher'
-import i18n from '../../services/i18n'
 
 export default function AdminLayout() {
   const { t } = useTranslation()
@@ -150,7 +149,7 @@ export default function AdminLayout() {
           <div className="flex items-center gap-4">
             <LanguageSwitcher />
             <span className="text-sm text-gray-500">
-              {new Date().toLocaleDateString(i18n.language === 'ar' ? 'ar-SA' : 'en-US', {
+              {new Date().toLocaleDateString('en-US', {
                 weekday: 'long',
                 year: 'numeric',
                 month: 'long',

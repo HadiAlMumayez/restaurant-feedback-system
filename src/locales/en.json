@@ -46,6 +46,7 @@
     "error": "Failed to submit feedback. Please try again.",
     "loadingBranches": "Loading branches...",
     "noBranches": "No active branches available",
+    "noBranchesHint": "Please contact the administrator to add branches.",
     "invalidBranch": "Invalid branch selected"
   },
   "admin": {

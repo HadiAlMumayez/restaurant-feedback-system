@@ -46,12 +46,22 @@ export default function FeedbackPage() {
 
         // Load all branches for selection
         const allBranches = await getBranches()
+        
+        // Debug logging for mobile issues
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Loaded branches:', allBranches.length, allBranches)
+        }
+        
         setBranches(allBranches)
         
         // If only one branch, auto-select it
         if (allBranches.length === 1) {
           setSelectedBranch(allBranches[0])
           setPageState('form')
+        } else if (allBranches.length === 0) {
+          // No branches found - show error
+          setError(t('feedback.noBranches', 'No active branches available'))
+          setPageState('select-branch')
         } else {
           setPageState('select-branch')
         }
@@ -61,6 +71,8 @@ export default function FeedbackPage() {
         let errorMessage = 'Failed to load. Please check your connection.'
         if (err?.message?.includes('permission') || err?.code === 'permission-denied') {
           errorMessage = 'Unable to load branches. Please check your connection and try again.'
+        } else if (err?.code === 'unavailable' || err?.code === 'deadline-exceeded') {
+          errorMessage = 'Network error. Please check your internet connection and try again.'
         } else if (err?.message) {
           errorMessage = err.message
         } else {
@@ -76,7 +88,7 @@ export default function FeedbackPage() {
     }
 
     loadData()
-  }, [urlBranchId])
+  }, [urlBranchId, t])
 
   // Handle branch selection
   const handleBranchSelect = (branch: Branch) => {
