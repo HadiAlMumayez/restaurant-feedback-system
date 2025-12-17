@@ -144,10 +144,10 @@ export async function getBranches(): Promise<Branch[]> {
       throw new Error('Permission denied: Unable to read branches. Please check Firestore security rules.')
     }
     if (error?.code === 'unavailable') {
-      throw new Error('Service unavailable. Please check your internet connection and try again.')
+      throw new Error('Service unavailable. This may be due to network restrictions in your region. Please check your internet connection or try using a VPN.')
     }
     if (error?.code === 'deadline-exceeded') {
-      throw new Error('Request timeout. Please check your internet connection and try again.')
+      throw new Error('Request timeout. This may be due to network restrictions. Please check your internet connection or try using a VPN.')
     }
     if (error?.code === 'failed-precondition') {
       throw new Error('Database error. Please refresh the page and try again.')

@@ -398,6 +398,13 @@ MIT License - feel free to use this for your restaurant chain!
 - Verify security rules allow create
 - Check browser network tab for errors
 
+### No branches loading on mobile / "No active branches available"
+- **Geographic restrictions**: Firebase services may be blocked in certain regions (e.g., Syria, Iran). Users may need to use a VPN.
+- **Network issues**: Check internet connection and firewall settings
+- **Cache issues**: Clear browser cache or use incognito mode
+- **Mobile-specific**: Try different mobile browsers (Chrome, Safari)
+- Check browser console for detailed error messages
+
 ---
 
 Built with ❤️ for better restaurant experiences
