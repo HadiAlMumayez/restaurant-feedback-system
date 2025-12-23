@@ -20,21 +20,26 @@ import {
   ChevronRight,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
+import { useRoleGuard } from '../../hooks/useRoleGuard'
 import LanguageSwitcher from '../LanguageSwitcher'
 
 export default function AdminLayout() {
   const { t } = useTranslation()
   const { user, logout } = useAuth()
+  const { isOwner, canPerform } = useRoleGuard()
   const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
-  const navItems = [
-    { to: '/admin', icon: LayoutDashboard, label: t('admin.overview'), end: true },
-    { to: '/admin/branches', icon: Building2, label: t('admin.branches'), end: false },
-    { to: '/admin/reviews', icon: MessageSquare, label: t('admin.reviews'), end: false },
-    { to: '/admin/customers', icon: Users, label: t('admin.customers'), end: false },
-    { to: '/admin/admins', icon: UserCog, label: t('admin.admins'), end: false },
+  // Navigation items with role-based visibility
+  const allNavItems = [
+    { to: '/admin', icon: LayoutDashboard, label: t('admin.overview'), end: true, show: true },
+    { to: '/admin/branches', icon: Building2, label: t('admin.branches'), end: false, show: canPerform('manageBranches') },
+    { to: '/admin/reviews', icon: MessageSquare, label: t('admin.reviews'), end: false, show: canPerform('viewReviews') },
+    { to: '/admin/customers', icon: Users, label: t('admin.customers'), end: false, show: canPerform('viewReviews') },
+    { to: '/admin/admins', icon: UserCog, label: t('admin.admins'), end: false, show: canPerform('manageAdmins') },
   ]
+
+  const navItems = allNavItems.filter(item => item.show)
 
 
   const handleLogout = async () => {

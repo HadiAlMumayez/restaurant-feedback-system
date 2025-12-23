@@ -8,6 +8,7 @@
 import { initializeApp, getApp } from 'firebase/app'
 import { getFirestore, connectFirestoreEmulator, enableIndexedDbPersistence } from 'firebase/firestore'
 import { getAuth, connectAuthEmulator } from 'firebase/auth'
+import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check'
 
 // Firebase configuration from environment variables
 // These are safe to expose in client-side code (they identify the project, not authenticate)
@@ -66,6 +67,23 @@ try {
 // Initialize Auth
 export const auth = getAuth(app)
 console.log('[Firebase] Auth initialized:', !!auth)
+
+// Initialize App Check (reCAPTCHA v3)
+// Note: In development, App Check uses a debug token
+// In production, ensure VITE_RECAPTCHA_SITE_KEY is set
+if (import.meta.env.VITE_RECAPTCHA_SITE_KEY) {
+  try {
+    initializeAppCheck(app, {
+      provider: new ReCaptchaV3Provider(import.meta.env.VITE_RECAPTCHA_SITE_KEY),
+      isTokenAutoRefreshEnabled: true,
+    })
+    console.log('[Firebase] App Check initialized with reCAPTCHA v3')
+  } catch (err) {
+    console.warn('[Firebase] App Check initialization failed:', err)
+  }
+} else {
+  console.warn('[Firebase] App Check not initialized: VITE_RECAPTCHA_SITE_KEY not set')
+}
 
 // Connect to emulators in development (optional)
 if (import.meta.env.DEV && import.meta.env.VITE_USE_EMULATORS === 'true') {

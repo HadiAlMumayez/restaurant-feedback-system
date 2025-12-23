@@ -1,8 +1,8 @@
 /**
  * Authentication Context
  * 
- * Provides Firebase Auth state to the entire application.
- * Handles login, logout, and auth state persistence.
+ * Provides Firebase Auth state and admin RBAC to the entire application.
+ * Handles login, logout, auth state persistence, and admin role loading.
  */
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
@@ -15,11 +15,17 @@ import {
   onAuthStateChanged,
 } from 'firebase/auth'
 import { auth } from '../services/firebase'
+import { getAdmin } from '../services/admin'
+import type { Admin, AdminRole } from '../types'
 
 interface AuthContextType {
   user: User | null
   loading: boolean
   error: string | null
+  // Admin RBAC
+  isAdmin: boolean
+  adminRole: AdminRole | null
+  allowedBranchIds: string[] | null // null means all branches (owner), [] means none, [ids] means specific branches
   loginWithEmail: (email: string, password: string) => Promise<void>
   loginWithGoogle: () => Promise<void>
   logout: () => Promise<void>
@@ -32,6 +38,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  // Admin RBAC state
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [adminRole, setAdminRole] = useState<AdminRole | null>(null)
+  const [allowedBranchIds, setAllowedBranchIds] = useState<string[] | null>(null)
+
+  // Load admin data when user changes
+  useEffect(() => {
+    const loadAdminData = async (uid: string) => {
+      try {
+        const admin = await getAdmin(uid)
+        if (admin) {
+          setIsAdmin(true)
+          setAdminRole(admin.role)
+          // Owners have null (all branches), others have array (specific or empty)
+          setAllowedBranchIds(admin.role === 'owner' ? null : (admin.branchIds || []))
+        } else {
+          setIsAdmin(false)
+          setAdminRole(null)
+          setAllowedBranchIds(null)
+        }
+      } catch (err) {
+        console.error('Failed to load admin data:', err)
+        setIsAdmin(false)
+        setAdminRole(null)
+        setAllowedBranchIds(null)
+      }
+    }
+
+    if (user) {
+      loadAdminData(user.uid)
+    } else {
+      setIsAdmin(false)
+      setAdminRole(null)
+      setAllowedBranchIds(null)
+    }
+  }, [user])
 
   // Listen to auth state changes
   useEffect(() => {
@@ -90,6 +132,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user,
     loading,
     error,
+    isAdmin,
+    adminRole,
+    allowedBranchIds,
     loginWithEmail,
     loginWithGoogle,
     logout,

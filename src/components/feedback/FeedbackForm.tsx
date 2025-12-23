@@ -33,10 +33,31 @@ export default function FeedbackForm({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showOptional, setShowOptional] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Anti-abuse: honeypot field (hidden from users, bots may fill it)
+  const [honeypot, setHoneypot] = useState('')
+  // Anti-abuse: submission cooldown (prevent rapid submissions)
+  const [lastSubmissionTime, setLastSubmissionTime] = useState<number>(0)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
+
+    // Anti-abuse: Check honeypot (if filled, likely a bot)
+    if (honeypot) {
+      console.warn('Honeypot field filled - possible bot submission')
+      setError('Invalid submission. Please try again.')
+      return
+    }
+
+    // Anti-abuse: Check cooldown (prevent rapid submissions)
+    const now = Date.now()
+    const timeSinceLastSubmission = now - lastSubmissionTime
+    const cooldownMs = 5000 // 5 seconds
+    if (timeSinceLastSubmission < cooldownMs) {
+      const remainingSeconds = Math.ceil((cooldownMs - timeSinceLastSubmission) / 1000)
+      setError(`Please wait ${remainingSeconds} second(s) before submitting again.`)
+      return
+    }
 
     if (rating === 0) {
       setError(t('feedback.ratingRequired'))
@@ -44,6 +65,7 @@ export default function FeedbackForm({
     }
 
     setIsSubmitting(true)
+    setLastSubmissionTime(now)
 
     try {
       await onSubmit({
@@ -198,6 +220,18 @@ export default function FeedbackForm({
           {error}
         </div>
       )}
+
+      {/* Honeypot field (hidden from users) */}
+      <input
+        type="text"
+        name="website"
+        value={honeypot}
+        onChange={(e) => setHoneypot(e.target.value)}
+        style={{ position: 'absolute', left: '-9999px', opacity: 0, pointerEvents: 'none' }}
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+      />
 
       {/* Submit button */}
       <button

@@ -13,6 +13,7 @@ import {
   getBranchStats,
   getCustomerFrequency,
 } from '../services/firestore'
+import { useAuth } from '../context/AuthContext'
 import type { Branch, Review, DateRange, DailyStats, BranchStats } from '../types'
 
 interface DashboardData {
@@ -31,6 +32,7 @@ interface DashboardData {
 }
 
 export function useDashboardData(dateRange: DateRange): DashboardData {
+  const { allowedBranchIds } = useAuth()
   const [totals, setTotals] = useState({
     totalReviews: 0,
     averageRating: 0,
@@ -48,12 +50,12 @@ export function useDashboardData(dateRange: DateRange): DashboardData {
     setError(null)
 
     try {
-      // Fetch all data in parallel
+      // Fetch all data in parallel (with RBAC filtering)
       const [totalsData, branchesData, statsMap, reviews] = await Promise.all([
         getDashboardTotals(),
         getBranches(),
         getBranchStats(dateRange),
-        getReviewsForStats({ dateRange }),
+        getReviewsForStats({ dateRange, allowedBranchIds }),
       ])
 
       setTotals(totalsData)
@@ -119,7 +121,7 @@ export function useDashboardData(dateRange: DateRange): DashboardData {
     } finally {
       setLoading(false)
     }
-  }, [dateRange])
+  }, [dateRange, allowedBranchIds])
 
   useEffect(() => {
     fetchData()

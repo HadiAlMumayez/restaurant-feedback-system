@@ -278,7 +278,8 @@ export async function submitReview(data: ReviewFormData): Promise<string> {
 }
 
 // Get reviews with filters and pagination (for admin dashboard)
-// Simplified to use client-side filtering to avoid index requirements
+// Respects RBAC: filters by allowedBranchIds for managers/viewers
+// Uses Firestore queries where possible, falls back to client-side filtering for complex filters
 export async function getReviews(options: {
   branchId?: string
   dateRange?: DateRange
@@ -286,6 +287,7 @@ export async function getReviews(options: {
   maxRating?: number
   pageSize?: number
   lastDoc?: DocumentSnapshot
+  allowedBranchIds?: string[] | null // null = all branches (owner), [] = none, [ids] = specific
 }): Promise<{ reviews: Review[]; lastDoc: DocumentSnapshot | null; hasMore: boolean }> {
   const {
     branchId,
@@ -294,13 +296,35 @@ export async function getReviews(options: {
     maxRating,
     pageSize = 20,
     lastDoc,
+    allowedBranchIds,
   } = options
 
-  // Simple query - just order by createdAt (single field index auto-created)
-  const constraints: QueryConstraint[] = [
-    orderBy('createdAt', 'desc'),
-    limit(500) // Get more to allow for client-side filtering
-  ]
+  // Build query constraints
+  const constraints: QueryConstraint[] = []
+  
+  // If specific branchId requested and user has access, use where clause
+  if (branchId) {
+    // Check if user can access this branch
+    if (allowedBranchIds !== null && !allowedBranchIds.includes(branchId)) {
+      // User doesn't have access to this branch
+      return { reviews: [], lastDoc: null, hasMore: false }
+    }
+    constraints.push(where('branchId', '==', branchId))
+  } else if (allowedBranchIds !== null && allowedBranchIds.length > 0) {
+    // User has limited branch access, filter by allowed branches
+    // Note: Firestore 'in' query supports up to 10 values
+    if (allowedBranchIds.length <= 10) {
+      constraints.push(where('branchId', 'in', allowedBranchIds))
+    }
+    // If more than 10, we'll filter client-side
+  }
+  // If allowedBranchIds is null (owner), no branch filter needed
+
+  // Order by createdAt (single field index)
+  constraints.push(orderBy('createdAt', 'desc'))
+  
+  // Limit for pagination (get more to allow for client-side filtering)
+  constraints.push(limit(500))
 
   if (lastDoc) {
     constraints.push(startAfter(lastDoc))
@@ -309,17 +333,21 @@ export async function getReviews(options: {
   const q = query(collection(db, REVIEWS_COLLECTION), ...constraints)
   const snapshot = await getDocs(q)
 
-  // Filter client-side to avoid composite index requirements
+  // Filter client-side for complex filters (date range, rating, or >10 branchIds)
   let allReviews = snapshot.docs.map(docSnap => ({
     id: docSnap.id,
     doc: docSnap,
     ...docSnap.data()
   })) as (Review & { doc: DocumentSnapshot })[]
 
-  // Apply filters
+  // Apply additional filters client-side
   allReviews = allReviews.filter(review => {
-    // Branch filter
+    // Branch filter (if not already filtered by Firestore query)
     if (branchId && review.branchId !== branchId) return false
+    if (!branchId && allowedBranchIds !== null && allowedBranchIds.length > 10) {
+      // More than 10 allowed branches, filter client-side
+      if (!allowedBranchIds.includes(review.branchId)) return false
+    }
     
     // Date range filter
     if (dateRange) {
@@ -348,34 +376,66 @@ export async function getReviews(options: {
 }
 
 // Get all reviews for a date range (for statistics calculation)
-// Simplified to avoid index requirements - filters client-side
+// Respects RBAC: filters by allowedBranchIds for managers/viewers
 export async function getReviewsForStats(options: {
   branchId?: string
   dateRange: DateRange
+  allowedBranchIds?: string[] | null // null = all branches (owner), [] = none, [ids] = specific
 }): Promise<Review[]> {
-  const { branchId, dateRange } = options
+  const { branchId, dateRange, allowedBranchIds } = options
   
-  // Simple query - get all reviews
-  const snapshot = await getDocs(collection(db, REVIEWS_COLLECTION))
+  // Build query with RBAC filtering
+  const constraints: QueryConstraint[] = []
   
-  // Filter client-side to avoid composite index requirements
+  if (branchId) {
+    // Check if user can access this branch
+    if (allowedBranchIds !== null && !allowedBranchIds.includes(branchId)) {
+      return [] // User doesn't have access
+    }
+    constraints.push(where('branchId', '==', branchId))
+  } else if (allowedBranchIds !== null && allowedBranchIds.length > 0) {
+    // Filter by allowed branches (up to 10 for Firestore 'in' query)
+    if (allowedBranchIds.length <= 10) {
+      constraints.push(where('branchId', 'in', allowedBranchIds))
+    }
+  }
+  
+  // Order by createdAt
+  constraints.push(orderBy('createdAt', 'desc'))
+  
+  const q = constraints.length > 0
+    ? query(collection(db, REVIEWS_COLLECTION), ...constraints)
+    : collection(db, REVIEWS_COLLECTION)
+  
+  const snapshot = await getDocs(q)
+  
+  // Filter client-side for date range and >10 branchIds
   const startTime = dateRange.startDate.getTime()
   const endTime = dateRange.endDate.getTime()
   
-  const reviews = snapshot.docs
+  let reviews = snapshot.docs
     .map(doc => ({
       id: doc.id,
       ...doc.data()
     })) as Review[]
   
-  return reviews
-    .filter(review => {
-      const reviewTime = review.createdAt.toDate().getTime()
-      const inDateRange = reviewTime >= startTime && reviewTime <= endTime
-      const matchesBranch = !branchId || review.branchId === branchId
-      return inDateRange && matchesBranch
-    })
-    .sort((a, b) => b.createdAt.toDate().getTime() - a.createdAt.toDate().getTime())
+  // Additional client-side filtering
+  reviews = reviews.filter(review => {
+    // Date range filter
+    const reviewTime = review.createdAt.toDate().getTime()
+    if (reviewTime < startTime || reviewTime > endTime) return false
+    
+    // Branch filter (if not already filtered by Firestore query)
+    if (branchId && review.branchId !== branchId) return false
+    if (!branchId && allowedBranchIds !== null && allowedBranchIds.length > 10) {
+      // More than 10 allowed branches, filter client-side
+      if (!allowedBranchIds.includes(review.branchId)) return false
+    }
+    
+    return true
+  })
+  
+  return reviews.sort((a, b) => b.createdAt.toDate().getTime() - a.createdAt.toDate().getTime())
 }
 
 // Get review statistics per branch (simplified - no index needed)

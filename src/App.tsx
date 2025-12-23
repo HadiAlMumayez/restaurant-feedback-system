@@ -13,9 +13,9 @@ import ReviewsList from './pages/admin/ReviewsList'
 import CustomerFrequency from './pages/admin/CustomerFrequency'
 import AdminsManagement from './pages/admin/AdminsManagement'
 
-// Protected Route wrapper
+// Protected Route wrapper - requires authentication AND admin membership
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth()
+  const { user, loading, isAdmin } = useAuth()
 
   if (loading) {
     return (
@@ -27,6 +27,32 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (!user) {
     return <Navigate to="/login" replace />
+  }
+
+  // Require admin membership (presence of admin doc in Firestore)
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-cream">
+        <div className="text-center max-w-md mx-auto p-6">
+          <h1 className="text-2xl font-bold text-charcoal mb-4">Access Denied</h1>
+          <p className="text-gray-600 mb-6">
+            You are logged in, but you don't have admin access. Please contact an administrator to grant you access.
+          </p>
+          <button
+            onClick={() => {
+              // Logout and redirect to login
+              import('../context/AuthContext').then(({ useAuth }) => {
+                const { logout } = useAuth()
+                logout().then(() => window.location.href = '/login')
+              })
+            }}
+            className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors"
+          >
+            Logout
+          </button>
+        </div>
+      </div>
+    )
   }
 
   return <>{children}</>

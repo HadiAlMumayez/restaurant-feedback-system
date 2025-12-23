@@ -101,3 +101,21 @@ export interface PaginationState {
   hasMore: boolean
 }
 
+/**
+ * Admin role types
+ */
+export type AdminRole = 'owner' | 'manager' | 'viewer'
+
+/**
+ * Admin document stored in Firestore
+ * Collection: admins
+ * Document ID: user's Firebase Auth UID
+ */
+export interface Admin {
+  id: string // Firebase Auth UID
+  role: AdminRole
+  branchIds?: string[] // Optional: limits managers/viewers to specific branches
+  createdAt: Timestamp
+  updatedAt: Timestamp
+}
+

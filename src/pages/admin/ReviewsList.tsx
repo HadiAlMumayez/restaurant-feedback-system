@@ -17,8 +17,13 @@ import {
 } from 'lucide-react'
 import DOMPurify from 'dompurify'
 import { useSafeTranslation } from '../../hooks/useSafeTranslation'
+import { useAuth } from '../../context/AuthContext'
+import { useRoleGuard } from '../../hooks/useRoleGuard'
 import DateRangePicker from '../../components/admin/DateRangePicker'
-import { getReviews, getBranches } from '../../services/firestore'
+import { getReviews, getBranches, getAllBranches } from '../../services/firestore'
+import { exportReviewsToPdf } from '../../utils/exportPdf'
+import { exportReviewsToExcel } from '../../utils/exportExcel'
+import { Download, FileText, FileSpreadsheet } from 'lucide-react'
 import type { Review, Branch, DateRange } from '../../types'
 import { DocumentSnapshot } from 'firebase/firestore'
 
@@ -26,11 +31,14 @@ const PAGE_SIZE = 15
 
 export default function ReviewsList() {
   const { t } = useSafeTranslation()
+  const { allowedBranchIds } = useAuth()
+  const { canPerform } = useRoleGuard()
   const [dateRange, setDateRange] = useState<DateRange>({
     startDate: subDays(new Date(), 30),
     endDate: new Date(),
   })
   const [branches, setBranches] = useState<Branch[]>([])
+  const [allBranches, setAllBranches] = useState<Branch[]>([])
   const [reviews, setReviews] = useState<Review[]>([])
   const [loading, setLoading] = useState(true)
   const [lastDoc, setLastDoc] = useState<DocumentSnapshot | null>(null)
@@ -44,12 +52,31 @@ export default function ReviewsList() {
   const [searchTerm, setSearchTerm] = useState('')
   const [showFilters, setShowFilters] = useState(false)
 
-  // Load branches on mount
+  // Load branches on mount (filter by allowedBranchIds)
   useEffect(() => {
-    getBranches().then(setBranches).catch(console.error)
-  }, [])
+    const loadBranches = async () => {
+      try {
+        const all = await getAllBranches()
+        setAllBranches(all)
+        // Filter branches based on RBAC
+        if (allowedBranchIds === null) {
+          // Owner: show all branches
+          setBranches(all)
+        } else if (allowedBranchIds.length > 0) {
+          // Manager/Viewer: show only allowed branches
+          setBranches(all.filter(b => allowedBranchIds.includes(b.id)))
+        } else {
+          // No allowed branches
+          setBranches([])
+        }
+      } catch (err) {
+        console.error('Failed to load branches:', err)
+      }
+    }
+    loadBranches()
+  }, [allowedBranchIds])
 
-  // Fetch reviews
+  // Fetch reviews (with RBAC filtering)
   const fetchReviews = useCallback(async (startAfterDoc: DocumentSnapshot | null = null) => {
     setLoading(true)
     try {
@@ -59,6 +86,7 @@ export default function ReviewsList() {
         minRating: selectedRating ? parseInt(selectedRating) : undefined,
         pageSize: PAGE_SIZE,
         lastDoc: startAfterDoc || undefined,
+        allowedBranchIds, // Pass RBAC filter
       })
 
       setReviews(result.reviews)
@@ -69,7 +97,7 @@ export default function ReviewsList() {
     } finally {
       setLoading(false)
     }
-  }, [selectedBranch, dateRange, selectedRating])
+  }, [selectedBranch, dateRange, selectedRating, allowedBranchIds])
 
   // Initial fetch and refetch on filter changes
   useEffect(() => {
@@ -121,6 +149,33 @@ export default function ReviewsList() {
 
   const hasActiveFilters = selectedBranch || selectedRating || searchTerm
 
+  // Export handlers
+  const handleExportPdf = () => {
+    const selectedBranchName = selectedBranch 
+      ? branches.find(b => b.id === selectedBranch)?.name 
+      : undefined
+    exportReviewsToPdf({
+      reviews: filteredReviews,
+      branches: allBranches,
+      dateRange,
+      branchName: selectedBranchName,
+    })
+  }
+
+  const handleExportExcel = () => {
+    const selectedBranchName = selectedBranch 
+      ? branches.find(b => b.id === selectedBranch)?.name 
+      : undefined
+    exportReviewsToExcel({
+      reviews: filteredReviews,
+      branches: allBranches,
+      dateRange,
+      branchName: selectedBranchName,
+    })
+  }
+
+  const canExport = canPerform('exportReports')
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -129,7 +184,40 @@ export default function ReviewsList() {
           <h1 className="text-2xl font-display font-bold text-charcoal">{t('admin.reviews')}</h1>
           <p className="text-gray-500">{t('admin.reviewsListDescription')}</p>
         </div>
-        <DateRangePicker value={dateRange} onChange={setDateRange} />
+        <div className="flex items-center gap-3">
+          <DateRangePicker value={dateRange} onChange={setDateRange} />
+          {canExport && (
+            <div className="relative group">
+              <button
+                className="flex items-center gap-2 px-4 py-2.5 bg-brand-500 text-white rounded-xl
+                         font-medium hover:bg-brand-600 transition-colors shadow-md"
+              >
+                <Download size={18} />
+                Export
+              </button>
+              <div className="absolute right-0 top-full mt-2 bg-white rounded-xl shadow-lg border border-gray-200
+                            opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all
+                            z-10 min-w-[160px]">
+                <button
+                  onClick={handleExportPdf}
+                  className="w-full flex items-center gap-2 px-4 py-2.5 hover:bg-gray-50 rounded-t-xl
+                           transition-colors text-left"
+                >
+                  <FileText size={18} className="text-red-600" />
+                  Export PDF
+                </button>
+                <button
+                  onClick={handleExportExcel}
+                  className="w-full flex items-center gap-2 px-4 py-2.5 hover:bg-gray-50 rounded-b-xl
+                           transition-colors text-left"
+                >
+                  <FileSpreadsheet size={18} className="text-green-600" />
+                  Export Excel
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Filters bar */}

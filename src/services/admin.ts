@@ -1,71 +1,93 @@
 /**
- * Admin Management Service
+ * Admin Management Service (RBAC)
+ * 
+ * Manages admin roles and permissions in Firestore.
+ * Document ID: Firebase Auth UID
+ * Fields: role, branchIds, timestamps
  * 
  * Note: Creating Firebase Auth users requires Admin SDK (server-side).
- * This service tracks admin emails in Firestore and provides helper functions.
  * To actually create users, use Firebase Console or a backend function.
  */
 
 import {
   collection,
   doc,
-  addDoc,
+  getDoc,
   getDocs,
+  setDoc,
+  updateDoc,
   deleteDoc,
-  query,
-  where,
+  serverTimestamp,
   Timestamp,
 } from 'firebase/firestore'
 import { db } from './firebase'
+import type { Admin, AdminRole } from '../types'
 
 const ADMINS_COLLECTION = 'admins'
 
-export interface AdminRecord {
-  id: string
-  email: string
-  displayName?: string
-  createdAt: Timestamp
-  createdBy?: string
-}
-
-// Get all admin records from Firestore
-export async function getAdminRecords(): Promise<AdminRecord[]> {
-  const snapshot = await getDocs(collection(db, ADMINS_COLLECTION))
-  return snapshot.docs.map(doc => ({
-    id: doc.id,
-    ...doc.data()
-  })) as AdminRecord[]
-}
-
-// Add an admin record (tracking only - user must be created in Firebase Auth separately)
-export async function addAdminRecord(data: {
-  email: string
-  displayName?: string
-  createdBy?: string
-}): Promise<string> {
-  // Check if email already exists
-  const existing = await getDocs(
-    query(collection(db, ADMINS_COLLECTION), where('email', '==', data.email.toLowerCase().trim()))
-  )
+// Get admin document by UID (for current user)
+export async function getAdmin(uid: string): Promise<Admin | null> {
+  const docRef = doc(db, ADMINS_COLLECTION, uid)
+  const docSnap = await getDoc(docRef)
   
-  if (!existing.empty) {
-    throw new Error('Admin with this email already exists')
+  if (!docSnap.exists()) {
+    return null
   }
-
-  const adminRecord = {
-    email: data.email.toLowerCase().trim(),
-    displayName: data.displayName?.trim() || null,
-    createdAt: Timestamp.now(),
-    createdBy: data.createdBy || null,
-  }
-
-  const docRef = await addDoc(collection(db, ADMINS_COLLECTION), adminRecord)
-  return docRef.id
+  
+  const data = docSnap.data()
+  return {
+    id: docSnap.id,
+    role: data.role as AdminRole,
+    branchIds: data.branchIds || undefined,
+    createdAt: data.createdAt,
+    updatedAt: data.updatedAt,
+  } as Admin
 }
 
-// Remove an admin record
-export async function removeAdminRecord(adminId: string): Promise<void> {
-  const docRef = doc(db, ADMINS_COLLECTION, adminId)
+// Get all admin records (for owners to manage)
+export async function getAllAdmins(): Promise<Admin[]> {
+  const snapshot = await getDocs(collection(db, ADMINS_COLLECTION))
+  return snapshot.docs.map(docSnap => {
+    const data = docSnap.data()
+    return {
+      id: docSnap.id,
+      role: data.role as AdminRole,
+      branchIds: data.branchIds || undefined,
+      createdAt: data.createdAt,
+      updatedAt: data.updatedAt,
+    } as Admin
+  })
+}
+
+// Create or update an admin record (owners only)
+export async function setAdmin(uid: string, data: {
+  role: AdminRole
+  branchIds?: string[]
+}): Promise<void> {
+  const docRef = doc(db, ADMINS_COLLECTION, uid)
+  const docSnap = await getDoc(docRef)
+  
+  if (docSnap.exists()) {
+    // Update existing
+    await updateDoc(docRef, {
+      role: data.role,
+      branchIds: data.branchIds || null,
+      updatedAt: serverTimestamp(),
+    })
+  } else {
+    // Create new
+    await setDoc(docRef, {
+      role: data.role,
+      branchIds: data.branchIds || null,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    })
+  }
+}
+
+// Remove an admin record (owners only, cannot delete self)
+export async function removeAdmin(uid: string): Promise<void> {
+  const docRef = doc(db, ADMINS_COLLECTION, uid)
   await deleteDoc(docRef)
 }
 

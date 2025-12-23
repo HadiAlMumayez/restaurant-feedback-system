@@ -1,108 +1,166 @@
 /**
- * Admins Management Page
+ * Admins Management Page (RBAC)
  * 
- * View and manage admin users.
+ * Manage admin roles and permissions.
+ * Only owners can access this page.
+ * 
  * Note: Creating Firebase Auth users requires Firebase Console or Admin SDK.
  */
 
 import { useState, useEffect } from 'react'
-import { UserPlus, Trash2, Mail, User, ExternalLink, Info, Loader2, Copy, Check } from 'lucide-react'
+import { UserPlus, Trash2, Shield, Eye, Settings, Loader2, X, Check } from 'lucide-react'
 import { useSafeTranslation } from '../../hooks/useSafeTranslation'
-import { getAdminRecords, addAdminRecord, removeAdminRecord } from '../../services/admin'
+import { getAllAdmins, setAdmin, removeAdmin } from '../../services/admin'
 import { useAuth } from '../../context/AuthContext'
-import type { AdminRecord } from '../../services/admin'
+import { useRoleGuard } from '../../hooks/useRoleGuard'
+import { getAllBranches } from '../../services/firestore'
+import type { Admin, AdminRole } from '../../types'
+import type { Branch } from '../../types'
 
 export default function AdminsManagement() {
   const { t } = useSafeTranslation()
   const { user } = useAuth()
-  const [admins, setAdmins] = useState<AdminRecord[]>([])
+  const { isOwner } = useRoleGuard()
+  const [admins, setAdmins] = useState<Admin[]>([])
+  const [branches, setBranches] = useState<Branch[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
-  const [email, setEmail] = useState('')
-  const [displayName, setDisplayName] = useState('')
+  const [uid, setUid] = useState('')
+  const [role, setRole] = useState<AdminRole>('viewer')
+  const [selectedBranchIds, setSelectedBranchIds] = useState<string[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [copiedEmail, setCopiedEmail] = useState<string | null>(null)
+  const [editingAdmin, setEditingAdmin] = useState<Admin | null>(null)
 
-  // Load admin records
+  // Load admin records and branches
   useEffect(() => {
-    loadAdmins()
-  }, [])
+    if (!isOwner) return
+    loadData()
+  }, [isOwner])
 
-  const loadAdmins = async () => {
+  const loadData = async () => {
     setLoading(true)
     setError(null)
     try {
-      const data = await getAdminRecords()
-      setAdmins(data)
+      const [adminsData, branchesData] = await Promise.all([
+        getAllAdmins(),
+        getAllBranches(),
+      ])
+      setAdmins(adminsData)
+      setBranches(branchesData)
     } catch (err) {
-      console.error('Failed to load admins:', err)
+      console.error('Failed to load data:', err)
       setError('Failed to load admin records')
     } finally {
       setLoading(false)
     }
   }
 
-  // Handle add admin record
+  // Handle add/update admin
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
     setError(null)
 
-    // Basic email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(email)) {
-      setError('Please enter a valid email address')
+    if (!uid.trim()) {
+      setError('Firebase Auth UID is required')
       setIsSubmitting(false)
       return
     }
 
+    // Owners don't need branchIds (they have access to all)
+    const branchIds = role === 'owner' ? undefined : selectedBranchIds
+
     try {
-      await addAdminRecord({
-        email,
-        displayName: displayName || undefined,
-        createdBy: user?.email || undefined,
+      await setAdmin(uid.trim(), {
+        role,
+        branchIds,
       })
 
       // Reset form
-      setEmail('')
-      setDisplayName('')
+      setUid('')
+      setRole('viewer')
+      setSelectedBranchIds([])
       setShowForm(false)
-      await loadAdmins()
+      setEditingAdmin(null)
+      await loadData()
     } catch (err) {
-      console.error('Failed to add admin:', err)
-      setError(err instanceof Error ? err.message : 'Failed to add admin record')
+      console.error('Failed to save admin:', err)
+      setError(err instanceof Error ? err.message : 'Failed to save admin record')
     } finally {
       setIsSubmitting(false)
     }
   }
 
+  // Handle edit
+  const handleEdit = (admin: Admin) => {
+    setEditingAdmin(admin)
+    setUid(admin.id)
+    setRole(admin.role)
+    setSelectedBranchIds(admin.branchIds || [])
+    setShowForm(true)
+  }
+
   // Handle delete
-  const handleDelete = async (adminId: string, adminEmail: string) => {
-    if (!confirm(`Remove admin record for "${adminEmail}"? This will not delete the Firebase Auth user.`)) {
+  const handleDelete = async (adminId: string) => {
+    if (adminId === user?.uid) {
+      setError('You cannot delete your own admin record')
+      return
+    }
+
+    if (!confirm('Remove admin access? This will not delete the Firebase Auth user.')) {
       return
     }
 
     try {
-      await removeAdminRecord(adminId)
-      await loadAdmins()
+      await removeAdmin(adminId)
+      await loadData()
     } catch (err) {
       console.error('Failed to remove admin:', err)
       setError('Failed to remove admin record')
     }
   }
 
-  // Copy email to clipboard
-  const handleCopyEmail = (email: string) => {
-    navigator.clipboard.writeText(email)
-    setCopiedEmail(email)
-    setTimeout(() => setCopiedEmail(null), 2000)
+  // Get role icon
+  const getRoleIcon = (role: AdminRole) => {
+    switch (role) {
+      case 'owner':
+        return <Shield size={18} className="text-purple-600" />
+      case 'manager':
+        return <Settings size={18} className="text-blue-600" />
+      case 'viewer':
+        return <Eye size={18} className="text-gray-600" />
+    }
   }
 
-  // Get Firebase Console URL
-  const getFirebaseAuthUrl = () => {
-    const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID
-    return `https://console.firebase.google.com/project/${projectId}/authentication/users`
+  // Get role label
+  const getRoleLabel = (role: AdminRole) => {
+    switch (role) {
+      case 'owner':
+        return 'Owner'
+      case 'manager':
+        return 'Manager'
+      case 'viewer':
+        return 'Viewer'
+    }
+  }
+
+  // Get branch names for display
+  const getBranchNames = (branchIds: string[] | undefined) => {
+    if (!branchIds || branchIds.length === 0) return 'All branches'
+    return branchIds.map(id => branches.find(b => b.id === id)?.name || id).join(', ')
+  }
+
+  if (!isOwner) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <Shield size={48} className="mx-auto mb-4 text-gray-300" />
+          <h2 className="text-xl font-semibold text-charcoal mb-2">Access Denied</h2>
+          <p className="text-gray-500">Only owners can manage admin roles.</p>
+        </div>
+      </div>
+    )
   }
 
   if (loading) {
@@ -118,37 +176,25 @@ export default function AdminsManagement() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-display font-bold text-charcoal">{t('admin.adminsManagement')}</h1>
-          <p className="text-gray-500">{t('admin.adminsManagementDescription')}</p>
+          <h1 className="text-2xl font-display font-bold text-charcoal">Admin Roles Management</h1>
+          <p className="text-gray-500">Manage admin roles and branch access permissions</p>
         </div>
         {!showForm && (
           <button
-            onClick={() => setShowForm(true)}
+            onClick={() => {
+              setEditingAdmin(null)
+              setUid('')
+              setRole('viewer')
+              setSelectedBranchIds([])
+              setShowForm(true)
+            }}
             className="flex items-center gap-2 px-4 py-2.5 bg-brand-500 text-white rounded-xl
                      font-medium hover:bg-brand-600 transition-colors shadow-md"
           >
             <UserPlus size={20} />
-            {t('admin.trackAdmin')}
+            Add Admin
           </button>
         )}
-      </div>
-
-      {/* Info banner */}
-      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-        <div className="flex items-start gap-3">
-          <Info size={20} className="text-blue-600 flex-shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <p className="text-sm text-blue-900 font-medium mb-1">{t('admin.howToAddAdmins')}</p>
-            <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
-              <li>{t('admin.howToAddAdminsStep1')}</li>
-              <li>{t('admin.howToAddAdminsStep2')}</li>
-              <li>{t('admin.howToAddAdminsStep3')}</li>
-            </ol>
-            <p className="text-xs text-blue-700 mt-2">
-              {t('admin.adminNote')}
-            </p>
-          </div>
-        </div>
       </div>
 
       {/* Error message */}
@@ -161,39 +207,96 @@ export default function AdminsManagement() {
       {/* Form */}
       {showForm && (
         <div className="bg-white rounded-2xl p-6 shadow-sm">
-          <h2 className="text-xl font-semibold text-charcoal mb-4">{t('admin.trackNewAdmin')}</h2>
-          <p className="text-sm text-gray-500 mb-4">
-            {t('admin.adminNote')}
-          </p>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-charcoal">
+              {editingAdmin ? 'Edit Admin' : 'Add Admin'}
+            </h2>
+            <button
+              onClick={() => {
+                setShowForm(false)
+                setEditingAdmin(null)
+                setUid('')
+                setRole('viewer')
+                setSelectedBranchIds([])
+              }}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <X size={20} />
+            </button>
+          </div>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                {t('admin.adminEmail')} *
+                Firebase Auth UID *
               </label>
               <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                type="text"
+                value={uid}
+                onChange={(e) => setUid(e.target.value)}
                 required
-                placeholder="admin@restaurant.com"
+                placeholder="User's Firebase Auth UID"
+                disabled={!!editingAdmin}
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-xl
-                         focus:border-brand-400 transition-colors"
+                         focus:border-brand-400 transition-colors disabled:bg-gray-100"
               />
+              <p className="text-xs text-gray-500 mt-1">
+                Get the UID from Firebase Console → Authentication → Users
+              </p>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                {t('admin.displayName')}
+                Role *
               </label>
-              <input
-                type="text"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="John Doe"
+              <select
+                value={role}
+                onChange={(e) => {
+                  const newRole = e.target.value as AdminRole
+                  setRole(newRole)
+                  if (newRole === 'owner') {
+                    setSelectedBranchIds([])
+                  }
+                }}
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-xl
                          focus:border-brand-400 transition-colors"
-              />
+              >
+                <option value="owner">Owner (full access)</option>
+                <option value="manager">Manager (view + export, limited branches)</option>
+                <option value="viewer">Viewer (view only, limited branches)</option>
+              </select>
             </div>
+
+            {role !== 'owner' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Allowed Branches
+                </label>
+                <div className="space-y-2 max-h-48 overflow-y-auto border border-gray-200 rounded-xl p-3">
+                  {branches.map((branch) => (
+                    <label key={branch.id} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={selectedBranchIds.includes(branch.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedBranchIds([...selectedBranchIds, branch.id])
+                          } else {
+                            setSelectedBranchIds(selectedBranchIds.filter(id => id !== branch.id))
+                          }
+                        }}
+                        className="w-4 h-4 text-brand-500 rounded focus:ring-brand-400"
+                      />
+                      <span className="text-sm text-gray-700">{branch.name}</span>
+                    </label>
+                  ))}
+                </div>
+                {selectedBranchIds.length === 0 && (
+                  <p className="text-xs text-amber-600 mt-1">
+                    No branches selected. This admin will not be able to access any reviews.
+                  </p>
+                )}
+              </div>
+            )}
 
             <div className="flex gap-3 pt-2">
               <button
@@ -203,21 +306,23 @@ export default function AdminsManagement() {
                          font-medium hover:bg-brand-600 transition-colors
                          disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isSubmitting ? t('admin.adding') : t('admin.addAdmin')}
+                {isSubmitting ? 'Saving...' : editingAdmin ? 'Update' : 'Add Admin'}
               </button>
               <button
                 type="button"
                 onClick={() => {
                   setShowForm(false)
-                  setEmail('')
-                  setDisplayName('')
+                  setEditingAdmin(null)
+                  setUid('')
+                  setRole('viewer')
+                  setSelectedBranchIds([])
                 }}
                 disabled={isSubmitting}
                 className="px-4 py-2.5 border border-gray-200 text-gray-700 rounded-xl
                          font-medium hover:bg-gray-50 transition-colors
                          disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {t('common.cancel')}
+                Cancel
               </button>
             </div>
           </form>
@@ -227,14 +332,14 @@ export default function AdminsManagement() {
       {/* Admins list */}
       <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
         <div className="p-4 border-b border-gray-100">
-          <h2 className="text-lg font-semibold text-charcoal">{t('admin.trackedAdmins')}</h2>
-          <p className="text-sm text-gray-500">{t('admin.trackedAdminsDescription')}</p>
+          <h2 className="text-lg font-semibold text-charcoal">Admin Roles</h2>
+          <p className="text-sm text-gray-500">{admins.length} admin(s) configured</p>
         </div>
         {admins.length === 0 ? (
           <div className="py-20 text-center text-gray-500">
-            <User size={48} className="mx-auto mb-4 text-gray-300" />
-            <p className="text-lg">No admins tracked yet</p>
-            <p className="text-sm mt-2">{t('admin.noAdminsMessage')}</p>
+            <Shield size={48} className="mx-auto mb-4 text-gray-300" />
+            <p className="text-lg">No admins configured yet</p>
+            <p className="text-sm mt-2">Add an admin to get started</p>
           </div>
         ) : (
           <div className="divide-y divide-gray-100">
@@ -246,55 +351,49 @@ export default function AdminsManagement() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4 flex-1">
                     <div className="w-12 h-12 bg-brand-100 rounded-xl flex items-center justify-center">
-                      <Mail size={24} className="text-brand-500" />
+                      {getRoleIcon(admin.role)}
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <h3 className="text-lg font-semibold text-charcoal">
-                          {admin.displayName || admin.email}
+                          {admin.id}
                         </h3>
-                        {admin.displayName && (
-                          <span className="text-sm text-gray-400">({admin.email})</span>
-                        )}
+                        <span className="px-2 py-0.5 bg-brand-100 text-brand-700 rounded text-xs font-medium">
+                          {getRoleLabel(admin.role)}
+                        </span>
                       </div>
                       <p className="text-sm text-gray-500">
-                        Added {admin.createdAt.toDate().toLocaleDateString('en-US', {
+                        {admin.role === 'owner' 
+                          ? 'Access to all branches'
+                          : `Branches: ${getBranchNames(admin.branchIds)}`
+                        }
+                      </p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        Created {admin.createdAt.toDate().toLocaleDateString('en-US', {
                           year: 'numeric',
                           month: 'short',
                           day: 'numeric',
                         })}
-                        {admin.createdBy && ` by ${admin.createdBy}`}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => handleCopyEmail(admin.email)}
-                      className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                      title="Copy email"
-                    >
-                      {copiedEmail === admin.email ? (
-                        <Check size={18} className="text-green-600" />
-                      ) : (
-                        <Copy size={18} />
-                      )}
-                    </button>
-                    <a
-                      href={getFirebaseAuthUrl()}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                      onClick={() => handleEdit(admin)}
                       className="p-2 text-brand-600 hover:bg-brand-50 rounded-lg transition-colors"
-                      title="Open Firebase Console"
+                      title="Edit"
                     >
-                      <ExternalLink size={18} />
-                    </a>
-                    <button
-                      onClick={() => handleDelete(admin.id, admin.email)}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      title="Remove from tracking"
-                    >
-                      <Trash2 size={18} />
+                      <Settings size={18} />
                     </button>
+                    {admin.id !== user?.uid && (
+                      <button
+                        onClick={() => handleDelete(admin.id)}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Remove"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -305,4 +404,3 @@ export default function AdminsManagement() {
     </div>
   )
 }
-

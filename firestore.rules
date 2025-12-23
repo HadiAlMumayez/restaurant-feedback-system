@@ -5,7 +5,7 @@ rules_version = '2';
  * 
  * DESIGN PRINCIPLES:
  * 1. Customer tablets can ONLY create reviews (no read/update/delete)
- * 2. Authenticated admin users can read all data and manage branches/admins
+ * 2. Role-based access control (RBAC): owner, manager, viewer
  * 3. No one can delete data through client (use Firebase console for admin tasks)
  * 4. Validate data on write to prevent malicious input
  */
@@ -16,6 +16,29 @@ service cloud.firestore {
     // Helper function to check if user is authenticated
     function isAuthenticated() {
       return request.auth != null;
+    }
+    
+    // Helper function to get admin document
+    function getAdmin() {
+      return get(/databases/$(database)/documents/admins/$(request.auth.uid)).data;
+    }
+    
+    // Helper function to check if user is admin (has admin doc)
+    function isAdmin() {
+      return isAuthenticated() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+    
+    // Helper function to check if user is owner
+    function isOwner() {
+      return isAdmin() && getAdmin().role == 'owner';
+    }
+    
+    // Helper function to check if user can access branch
+    function canAccessBranch(branchId) {
+      let admin = getAdmin();
+      // Owners can access all branches, managers/viewers can only access allowed branches
+      return admin.role == 'owner' || 
+        (admin.branchIds != null && admin.branchIds is list && branchId in admin.branchIds);
     }
     
     // Helper function to validate rating value
@@ -44,16 +67,16 @@ service cloud.firestore {
     
     /**
      * BRANCHES COLLECTION
-     * - Read: Public can read all branches (we filter active client-side)
-     * - Write: Authenticated admins only
+     * - Read: Public can read only active branches; admins can read all
+     * - Write: Only owners can create/update branches
      */
     match /branches/{branchId} {
-      // Allow public read of all branches (we filter active branches client-side)
-      // This allows the collection query to work
-      allow read: if true;
+      // Public can read only active branches
+      // Admins can read all branches
+      allow read: if resource.data.isActive == true || isAdmin();
       
-      // Only authenticated admins can create/update branches
-      allow create: if isAuthenticated()
+      // Only owners can create/update branches
+      allow create: if isOwner()
         && request.resource.data.keys().hasAll(['name', 'location', 'isActive'])
         && request.resource.data.name is string
         && request.resource.data.name.size() > 0
@@ -64,7 +87,7 @@ service cloud.firestore {
         && request.resource.data.isActive is bool
         && (request.resource.data.address == null || (request.resource.data.address is string && request.resource.data.address.size() <= 500));
       
-      allow update: if isAuthenticated();
+      allow update: if isOwner();
       
       // No deletes from client
       allow delete: if false;
@@ -73,26 +96,48 @@ service cloud.firestore {
     /**
      * REVIEWS COLLECTION
      * - Create: Anyone (customers on tablet) - with validation
-     * - Read: Authenticated admins only
+     * - Read: Authenticated admins only (filtered by branchIds for managers/viewers)
      * - Update/Delete: None (immutable records)
      */
     match /reviews/{reviewId} {
       // Public create with strict validation
       allow create: if isValidReview(request.resource.data);
       
-      // Only authenticated users can read reviews
-      allow read: if isAuthenticated();
+      // Only admins can read reviews
+      // Owners can read all reviews
+      // Managers/viewers can only read reviews for their allowed branches
+      allow read: if isAdmin() 
+        && (isOwner() || canAccessBranch(resource.data.branchId));
       
       // No updates or deletes from client
       allow update, delete: if false;
     }
     
     /**
-     * ADMINS COLLECTION (tracking admin emails)
-     * - Only authenticated admins can read/write
+     * ADMINS COLLECTION (RBAC: role-based access control)
+     * Document ID: Firebase Auth UID
+     * Fields: role ('owner' | 'manager' | 'viewer'), branchIds (string[]), timestamps
+     * - Read: All admins can read (to check their own role)
+     * - Write: Only owners can create/update/delete admin records
      */
     match /admins/{adminId} {
-      allow read, write: if isAuthenticated();
+      // All admins can read (to check their own role and allowed branches)
+      allow read: if isAdmin();
+      
+      // Only owners can create/update admin records
+      allow create: if isOwner()
+        && request.resource.data.keys().hasAll(['role', 'createdAt', 'updatedAt'])
+        && request.resource.data.role is string
+        && request.resource.data.role in ['owner', 'manager', 'viewer']
+        && (request.resource.data.branchIds == null || request.resource.data.branchIds is list);
+      
+      allow update: if isOwner()
+        && request.resource.data.role is string
+        && request.resource.data.role in ['owner', 'manager', 'viewer']
+        && (request.resource.data.branchIds == null || request.resource.data.branchIds is list);
+      
+      // Only owners can delete admin records (except themselves)
+      allow delete: if isOwner() && adminId != request.auth.uid;
     }
     
     /**
