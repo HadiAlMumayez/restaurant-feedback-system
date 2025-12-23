@@ -71,9 +71,10 @@ service cloud.firestore {
      * - Write: Only owners can create/update branches
      */
     match /branches/{branchId} {
-      // Public can read only active branches
+      // Public can read branches (we filter active client-side for better performance)
       // Admins can read all branches
-      allow read: if resource.data.isActive == true || isAdmin();
+      // Note: For collection queries, we allow read and filter client-side
+      allow read: if true;
       
       // Only owners can create/update branches
       allow create: if isOwner()
