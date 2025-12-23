@@ -39,7 +39,7 @@ interface ExportOptions {
 }
 
 // Helper to add header to a page
-function addHeader(doc: jsPDF, brandName: string, dateRange: DateRange, pageNum: number, totalPages: number) {
+function addHeader(doc: jsPDF, brandName: string, dateRange: DateRange) {
   const pageWidth = doc.internal.pageSize.getWidth()
   const margin = 14
   
@@ -95,8 +95,7 @@ function addFooter(doc: jsPDF, pageNum: number, totalPages: number) {
 // Calculate insights from data
 function calculateInsights(
   branchStats: ExportOptions['branchStats'],
-  dailyStats: ExportOptions['dailyStats'],
-  totals: ExportOptions['totals']
+  dailyStats: ExportOptions['dailyStats']
 ) {
   // Best branch (highest avg rating, min 3 reviews)
   const eligibleBranches = branchStats.filter(b => b.totalReviews >= 3)
@@ -176,12 +175,12 @@ export async function exportDashboardPdf(options: ExportOptions): Promise<void> 
   const contentWidth = pageWidth - (margin * 2)
 
   // Calculate insights
-  const insights = calculateInsights(branchStats, dailyStats, totals)
+  const insights = calculateInsights(branchStats, dailyStats)
 
   // ============================================
   // PAGE 1: COVER & SUMMARY
   // ============================================
-  addHeader(doc, brandName, dateRange, 1, 3)
+  addHeader(doc, brandName, dateRange)
   
   // Title
   doc.setFontSize(24)
@@ -278,7 +277,7 @@ export async function exportDashboardPdf(options: ExportOptions): Promise<void> 
   // PAGE 2: CHARTS
   // ============================================
   doc.addPage()
-  addHeader(doc, brandName, dateRange, 2, 3)
+  addHeader(doc, brandName, dateRange)
 
   let currentY = 25
 
@@ -364,7 +363,7 @@ export async function exportDashboardPdf(options: ExportOptions): Promise<void> 
   // PAGE 3: TABLES & INSIGHTS
   // ============================================
   doc.addPage()
-  addHeader(doc, brandName, dateRange, 3, 3)
+  addHeader(doc, brandName, dateRange)
 
   currentY = 25
 
