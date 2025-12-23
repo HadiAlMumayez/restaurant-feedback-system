@@ -52,9 +52,19 @@ service cloud.firestore {
     }
     
     // Helper function to check if branch exists and is active
+    // Uses exists() for proper validation before accessing data
     function branchExistsAndActive(branchId) {
-      let branch = get(/databases/$(database)/documents/branches/$(branchId));
-      return branch != null && branch.data.isActive == true;
+      return exists(/databases/$(database)/documents/branches/$(branchId))
+        && get(/databases/$(database)/documents/branches/$(branchId)).data.isActive == true;
+    }
+    
+    // Helper function to validate timestamp is near current time (prevents fake timestamps)
+    // Allows timestamps within 10 minutes of request time (accounts for clock skew)
+    // Note: Using duration.value() for time subtraction (Firestore rules v2)
+    function isNearNow(ts) {
+      return ts is timestamp
+        && ts <= request.time
+        && ts >= request.time - duration.value(10, 'm');
     }
     
     // Helper function to validate review data
@@ -64,7 +74,7 @@ service cloud.firestore {
         && data.branchId.size() > 0
         && data.branchId.size() <= 50
         && isValidRating(data.rating)
-        && (data.createdAt == request.time || data.createdAt is timestamp)
+        && isNearNow(data.createdAt)
         && isValidString(data.comment, 1000)
         && isValidString(data.customerName, 100)
         && isValidString(data.contact, 100)

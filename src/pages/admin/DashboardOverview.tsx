@@ -20,6 +20,7 @@ import {
 import { MessageSquare, Star, Building2, TrendingUp, Loader2, FileText, FileSpreadsheet, ChevronDown } from 'lucide-react'
 import { useSafeTranslation } from '../../hooks/useSafeTranslation'
 import { useRoleGuard } from '../../hooks/useRoleGuard'
+import { useAuth } from '../../context/AuthContext'
 import StatCard from '../../components/admin/StatCard'
 import DateRangePicker from '../../components/admin/DateRangePicker'
 import { useDashboardData, formatDateForDisplay } from '../../hooks/useDashboardData'
@@ -30,6 +31,7 @@ import type { DateRange } from '../../types'
 export default function DashboardOverview() {
   const { t } = useSafeTranslation()
   const { canPerform } = useRoleGuard()
+  const { user } = useAuth()
   const [dateRange, setDateRange] = useState<DateRange>({
     startDate: subDays(new Date(), 30),
     endDate: new Date(),
@@ -58,14 +60,24 @@ export default function DashboardOverview() {
     try {
       const periodReviews = dailyStats.reduce((sum, d) => sum + d.count, 0)
       
+      // Get brand name from environment variable
+      const brandName = import.meta.env.VITE_BRAND_NAME || 'Restaurant'
+      
+      // Get user email from auth context (if available)
+      const userEmail = user?.email || undefined
+      
       await exportDashboardPdf({
+        brandName,
         dateRange,
         totals: {
           ...totals,
           periodReviews,
         },
+        branchStats,
+        dailyStats,
         chart1Element: chart1Ref.current,
         chart2Element: chart2Ref.current,
+        userEmail,
       })
     } catch (err: any) {
       console.error('Export failed:', err)
