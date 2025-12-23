@@ -17,7 +17,7 @@ import type { Admin, AdminRole } from '../../types'
 import type { Branch } from '../../types'
 
 export default function AdminsManagement() {
-  const { user } = useAuth()
+  const { user, loading: authLoading, isAdmin, adminRole } = useAuth()
   const { isOwner } = useRoleGuard()
   const [admins, setAdmins] = useState<Admin[]>([])
   const [branches, setBranches] = useState<Branch[]>([])
@@ -32,23 +32,38 @@ export default function AdminsManagement() {
 
   // Load admin records and branches
   useEffect(() => {
-    if (!isOwner) return
+    // Wait for auth to finish loading before checking permissions
+    if (authLoading) return
+    
+    // Check if user is owner (call the function)
+    const userIsOwner = isAdmin && adminRole === 'owner'
+    if (!userIsOwner) {
+      setLoading(false)
+      return
+    }
+    
     loadData()
-  }, [isOwner])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, isAdmin, adminRole])
 
   const loadData = async () => {
     setLoading(true)
     setError(null)
     try {
+      console.log('[AdminsManagement] Loading data...', { isAdmin, adminRole })
       const [adminsData, branchesData] = await Promise.all([
         getAllAdmins(),
         getAllBranches(),
       ])
+      console.log('[AdminsManagement] Data loaded:', { adminsCount: adminsData.length, branchesCount: branchesData.length })
       setAdmins(adminsData)
       setBranches(branchesData)
-    } catch (err) {
-      console.error('Failed to load data:', err)
-      setError('Failed to load admin records')
+    } catch (err: any) {
+      console.error('[AdminsManagement] Failed to load data:', err)
+      const errorMessage = err?.code === 'permission-denied' 
+        ? 'Permission denied. Only owners can view admin records. Please check your Firestore rules.'
+        : err?.message || 'Failed to load admin records'
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }
@@ -149,7 +164,17 @@ export default function AdminsManagement() {
     return branchIds.map(id => branches.find(b => b.id === id)?.name || id).join(', ')
   }
 
-  if (!isOwner) {
+  // Show loading while auth is loading
+  if (authLoading || loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader2 size={48} className="text-brand-500 spinner" />
+      </div>
+    )
+  }
+
+  // Check if user is owner (call the function)
+  if (!isOwner()) {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
@@ -161,13 +186,6 @@ export default function AdminsManagement() {
     )
   }
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <Loader2 size={48} className="text-brand-500 spinner" />
-      </div>
-    )
-  }
 
   return (
     <div className="space-y-6">
