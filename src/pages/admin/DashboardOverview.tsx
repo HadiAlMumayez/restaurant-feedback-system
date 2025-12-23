@@ -4,7 +4,7 @@
  * Main admin dashboard with summary stats and charts.
  */
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { subDays } from 'date-fns'
 import {
   AreaChart,
@@ -17,21 +17,91 @@ import {
   BarChart,
   Bar,
 } from 'recharts'
-import { MessageSquare, Star, Building2, TrendingUp, Loader2 } from 'lucide-react'
+import { MessageSquare, Star, Building2, TrendingUp, Loader2, FileText, FileSpreadsheet, ChevronDown } from 'lucide-react'
 import { useSafeTranslation } from '../../hooks/useSafeTranslation'
+import { useRoleGuard } from '../../hooks/useRoleGuard'
 import StatCard from '../../components/admin/StatCard'
 import DateRangePicker from '../../components/admin/DateRangePicker'
 import { useDashboardData, formatDateForDisplay } from '../../hooks/useDashboardData'
+import { exportDashboardPdf } from '../../utils/exportDashboardPdf'
+import { exportDashboardExcel } from '../../utils/exportDashboardExcel'
 import type { DateRange } from '../../types'
 
 export default function DashboardOverview() {
   const { t } = useSafeTranslation()
+  const { canPerform } = useRoleGuard()
   const [dateRange, setDateRange] = useState<DateRange>({
     startDate: subDays(new Date(), 30),
     endDate: new Date(),
   })
+  const [isExporting, setIsExporting] = useState(false)
+  const [exportError, setExportError] = useState<string | null>(null)
+  const [showExportMenu, setShowExportMenu] = useState(false)
 
   const { totals, branchStats, dailyStats, recentReviews, loading, error } = useDashboardData(dateRange)
+
+  // Refs for chart containers
+  const chart1Ref = useRef<HTMLDivElement>(null) // Reviews Over Time
+  const chart2Ref = useRef<HTMLDivElement>(null) // Top Branches
+
+  // Handle PDF export
+  const handleExportPdf = async () => {
+    if (!chart1Ref.current || !chart2Ref.current) {
+      setExportError('Charts not ready. Please wait for page to load.')
+      return
+    }
+
+    setIsExporting(true)
+    setExportError(null)
+    setShowExportMenu(false)
+
+    try {
+      const periodReviews = dailyStats.reduce((sum, d) => sum + d.count, 0)
+      
+      await exportDashboardPdf({
+        dateRange,
+        totals: {
+          ...totals,
+          periodReviews,
+        },
+        chart1Element: chart1Ref.current,
+        chart2Element: chart2Ref.current,
+      })
+    } catch (err: any) {
+      console.error('Export failed:', err)
+      setExportError(err?.message || 'Failed to export PDF. Please try again.')
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
+  // Handle Excel export
+  const handleExportExcel = () => {
+    setIsExporting(true)
+    setExportError(null)
+    setShowExportMenu(false)
+
+    try {
+      const periodReviews = dailyStats.reduce((sum, d) => sum + d.count, 0)
+      
+      exportDashboardExcel({
+        dateRange,
+        totals: {
+          ...totals,
+          periodReviews,
+        },
+        dailyStats,
+        branchStats,
+      })
+    } catch (err: any) {
+      console.error('Export failed:', err)
+      setExportError(err?.message || 'Failed to export Excel. Please try again.')
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
+  const canExport = canPerform('exportReports')
 
   if (loading) {
     return (
@@ -69,14 +139,78 @@ export default function DashboardOverview() {
 
   return (
     <div className="space-y-6">
-      {/* Header with date picker */}
+      {/* Header with date picker and export button */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-display font-bold text-charcoal">{t('admin.overview')}</h1>
           <p className="text-gray-500">{t('admin.welcomeBack')}</p>
         </div>
-        <DateRangePicker value={dateRange} onChange={setDateRange} />
+        <div className="flex items-center gap-3">
+          <DateRangePicker value={dateRange} onChange={setDateRange} />
+          {canExport && (
+            <div className="relative">
+              <button
+                onClick={() => setShowExportMenu(!showExportMenu)}
+                disabled={isExporting || loading}
+                className="flex items-center gap-2 px-4 py-2.5 bg-brand-500 text-white rounded-xl
+                         font-medium hover:bg-brand-600 transition-colors shadow-md
+                         disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isExporting ? (
+                  <>
+                    <Loader2 size={18} className="spinner" />
+                    Exporting...
+                  </>
+                ) : (
+                  <>
+                    <FileText size={18} />
+                    Export Visuals
+                    <ChevronDown size={16} />
+                  </>
+                )}
+              </button>
+              
+              {showExportMenu && !isExporting && (
+                <>
+                  <div 
+                    className="fixed inset-0 z-10" 
+                    onClick={() => setShowExportMenu(false)}
+                  />
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-200 z-20 overflow-hidden">
+                    <button
+                      onClick={handleExportPdf}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 transition-colors"
+                    >
+                      <FileText size={18} className="text-brand-500" />
+                      <span>Export as PDF</span>
+                    </button>
+                    <button
+                      onClick={handleExportExcel}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 transition-colors border-t border-gray-200"
+                    >
+                      <FileSpreadsheet size={18} className="text-green-600" />
+                      <span>Export as Excel</span>
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* Export error message */}
+      {exportError && (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 animate-fade-in">
+          {exportError}
+          <button
+            onClick={() => setExportError(null)}
+            className="ml-2 underline"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* Stats cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -111,7 +245,7 @@ export default function DashboardOverview() {
       {/* Charts row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Reviews over time */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm">
+        <div className="bg-white rounded-2xl p-6 shadow-sm" ref={chart1Ref}>
           <h3 className="text-lg font-semibold text-charcoal mb-4">{t('admin.reviewsOverTime')}</h3>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
@@ -156,7 +290,7 @@ export default function DashboardOverview() {
         </div>
 
         {/* Top branches */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm">
+        <div className="bg-white rounded-2xl p-6 shadow-sm" ref={chart2Ref}>
           <h3 className="text-lg font-semibold text-charcoal mb-4">{t('admin.topBranchesByReviews')}</h3>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">

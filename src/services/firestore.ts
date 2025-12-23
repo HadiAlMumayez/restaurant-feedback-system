@@ -38,61 +38,87 @@ const REVIEWS_COLLECTION = 'reviews'
 // Get all active branches (simplified query - no index needed)
 export async function getBranches(): Promise<Branch[]> {
   try {
-    // Log for debugging (works in production too)
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-    console.log('[getBranches] Starting fetch, isMobile:', isMobile)
-    console.log('[getBranches] Firebase db initialized:', !!db)
-    console.log('[getBranches] Collection path:', BRANCHES_COLLECTION)
-    
-    // Force network fetch on mobile to avoid cache issues
     const collectionRef = collection(db, BRANCHES_COLLECTION)
-    console.log('[getBranches] Collection ref created:', !!collectionRef)
-    
-    // Simple query without composite index requirement
-    // Try server fetch first (force network), fallback to regular getDocs
     let snapshot
-    try {
-      // Try to get from server first (force network) - this bypasses cache
-      console.log('[getBranches] Attempting server fetch (bypassing cache)...')
-      snapshot = await getDocsFromServer(collectionRef)
-      console.log('[getBranches] Server fetch successful')
-    } catch (serverError: any) {
-      console.warn('[getBranches] Server fetch failed, trying regular getDocs:', serverError)
-      // Fallback to regular getDocs (may use cache)
-      snapshot = await getDocs(collectionRef)
-      console.log('[getBranches] Regular fetch successful')
+    let lastError: any = null
+    
+    // Try multiple strategies to fetch branches
+    const fetchStrategies = [
+      // Strategy 1: Force server fetch (bypass cache)
+      async () => {
+        console.log('[getBranches] Strategy 1: Server fetch (bypass cache)')
+        return await getDocsFromServer(collectionRef)
+      },
+      // Strategy 2: Regular fetch (may use cache)
+      async () => {
+        console.log('[getBranches] Strategy 2: Regular fetch (may use cache)')
+        return await getDocs(collectionRef)
+      },
+      // Strategy 3: Retry server fetch with delay
+      async () => {
+        console.log('[getBranches] Strategy 3: Retry server fetch after delay')
+        await new Promise(resolve => setTimeout(resolve, 500))
+        return await getDocsFromServer(collectionRef)
+      },
+    ]
+    
+    // Try each strategy until one succeeds
+    for (let i = 0; i < fetchStrategies.length; i++) {
+      try {
+        snapshot = await fetchStrategies[i]()
+        console.log(`[getBranches] Strategy ${i + 1} succeeded, snapshot size:`, snapshot.size)
+        
+        // If we got results, break out of the loop
+        if (snapshot.size > 0) {
+          break
+        }
+        
+        // If snapshot is empty, try next strategy
+        if (snapshot.empty && i < fetchStrategies.length - 1) {
+          console.warn(`[getBranches] Strategy ${i + 1} returned empty snapshot, trying next...`)
+          continue
+        }
+      } catch (err: any) {
+        lastError = err
+        console.warn(`[getBranches] Strategy ${i + 1} failed:`, err?.code || err?.message)
+        
+        // If this is a permission error, don't retry
+        if (err?.code === 'permission-denied') {
+          throw err
+        }
+        
+        // Try next strategy if available
+        if (i < fetchStrategies.length - 1) {
+          continue
+        }
+      }
     }
     
-    console.log('[getBranches] Snapshot received')
-    console.log('[getBranches] Snapshot size:', snapshot.size)
-    console.log('[getBranches] Snapshot empty:', snapshot.empty)
+    // If we still don't have a snapshot, throw the last error
+    if (!snapshot) {
+      if (lastError) {
+        throw lastError
+      }
+      throw new Error('Failed to fetch branches: All strategies failed')
+    }
+    
+    console.log('[getBranches] Final snapshot size:', snapshot.size)
     console.log('[getBranches] Snapshot metadata:', {
       fromCache: snapshot.metadata.fromCache,
       hasPendingWrites: snapshot.metadata.hasPendingWrites
     })
     
+    // If snapshot is empty, return empty array (don't throw error)
     if (snapshot.empty) {
-      console.warn('[getBranches] WARNING: Snapshot is empty!')
-      console.warn('[getBranches] This could mean:')
-      console.warn('[getBranches] 1. No documents in collection')
-      console.warn('[getBranches] 2. Permission denied (but no error thrown)')
-      console.warn('[getBranches] 3. Cache issue on mobile')
-      
-      // Try one more time with regular getDocs to see if we get different results
-      console.log('[getBranches] Retrying with regular getDocs...')
-      const retrySnapshot = await getDocs(collectionRef)
-      console.log('[getBranches] Retry snapshot size:', retrySnapshot.size)
-      if (retrySnapshot.size > 0) {
-        console.log('[getBranches] Retry found documents! Using retry snapshot')
-        snapshot = retrySnapshot
-      }
+      console.warn('[getBranches] Snapshot is empty - no branches in collection')
+      return []
     }
     
     // Filter and sort client-side to avoid index requirements
     const branches = snapshot.docs
-      .map((doc, index) => {
+      .map((doc) => {
         const data = doc.data()
-        const branch = {
+        return {
           id: doc.id,
           name: data.name || '',
           location: data.location || '',
@@ -100,39 +126,22 @@ export async function getBranches(): Promise<Branch[]> {
           isActive: data.isActive !== undefined ? data.isActive : true,
           createdAt: data.createdAt,
           updatedAt: data.updatedAt,
-        }
-        console.log(`[getBranches] Branch ${index + 1}:`, {
-          id: branch.id,
-          name: branch.name,
-          location: branch.location,
-          isActive: branch.isActive,
-          rawData: data
-        })
-        return branch
-      }) as Branch[]
+        } as Branch
+      })
     
     console.log('[getBranches] Total branches mapped:', branches.length)
-    console.log('[getBranches] All branch data:', JSON.stringify(branches, null, 2))
     
     const activeBranches = branches
-      .filter(b => {
-        const isActive = b.isActive !== false
-        if (!isActive) {
-          console.log('[getBranches] Filtered out inactive branch:', b.id, b.name)
-        }
-        return isActive
-      })
+      .filter(b => b.isActive !== false)
       .sort((a, b) => a.name.localeCompare(b.name))
     
     console.log('[getBranches] Active branches after filter:', activeBranches.length)
-    console.log('[getBranches] Active branch names:', activeBranches.map(b => b.name))
     
     if (activeBranches.length === 0 && branches.length > 0) {
-      console.error('[getBranches] ERROR: All branches were filtered out!')
-      console.error('[getBranches] This means all branches have isActive=false')
+      console.warn('[getBranches] WARNING: All branches were filtered out (all have isActive=false)')
     }
     
-    return activeBranches
+      return activeBranches
   } catch (error: any) {
     console.error('[getBranches] ERROR:', error)
     console.error('[getBranches] Error code:', error?.code)
