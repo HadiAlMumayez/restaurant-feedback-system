@@ -18,7 +18,6 @@ import {
   updateDoc,
   deleteDoc,
   serverTimestamp,
-  Timestamp,
 } from 'firebase/firestore'
 import { db } from './firebase'
 import type { Admin, AdminRole } from '../types'

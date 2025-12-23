@@ -39,12 +39,11 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
             You are logged in, but you don't have admin access. Please contact an administrator to grant you access.
           </p>
           <button
-            onClick={() => {
+            onClick={async () => {
               // Logout and redirect to login
-              import('../context/AuthContext').then(({ useAuth }) => {
-                const { logout } = useAuth()
-                logout().then(() => window.location.href = '/login')
-              })
+              const { logout } = useAuth()
+              await logout()
+              window.location.href = '/login'
             }}
             className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors"
           >

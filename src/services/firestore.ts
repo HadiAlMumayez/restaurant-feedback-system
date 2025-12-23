@@ -15,6 +15,7 @@ import {
   updateDoc,
   deleteDoc,
   query,
+  where,
   orderBy,
   limit,
   startAfter,
@@ -305,12 +306,12 @@ export async function getReviews(options: {
   // If specific branchId requested and user has access, use where clause
   if (branchId) {
     // Check if user can access this branch
-    if (allowedBranchIds !== null && !allowedBranchIds.includes(branchId)) {
+    if (allowedBranchIds !== null && allowedBranchIds !== undefined && !allowedBranchIds.includes(branchId)) {
       // User doesn't have access to this branch
       return { reviews: [], lastDoc: null, hasMore: false }
     }
     constraints.push(where('branchId', '==', branchId))
-  } else if (allowedBranchIds !== null && allowedBranchIds.length > 0) {
+  } else if (allowedBranchIds !== null && allowedBranchIds !== undefined && allowedBranchIds.length > 0) {
     // User has limited branch access, filter by allowed branches
     // Note: Firestore 'in' query supports up to 10 values
     if (allowedBranchIds.length <= 10) {
@@ -344,9 +345,10 @@ export async function getReviews(options: {
   allReviews = allReviews.filter(review => {
     // Branch filter (if not already filtered by Firestore query)
     if (branchId && review.branchId !== branchId) return false
-    if (!branchId && allowedBranchIds !== null && allowedBranchIds.length > 10) {
+    if (!branchId && allowedBranchIds !== null && allowedBranchIds !== undefined && allowedBranchIds.length > 10) {
       // More than 10 allowed branches, filter client-side
-      if (!allowedBranchIds.includes(review.branchId)) return false
+      const branchIds = allowedBranchIds // Type guard
+      if (branchIds && !branchIds.includes(review.branchId)) return false
     }
     
     // Date range filter
@@ -389,11 +391,11 @@ export async function getReviewsForStats(options: {
   
   if (branchId) {
     // Check if user can access this branch
-    if (allowedBranchIds !== null && !allowedBranchIds.includes(branchId)) {
+    if (allowedBranchIds !== null && allowedBranchIds !== undefined && !allowedBranchIds.includes(branchId)) {
       return [] // User doesn't have access
     }
     constraints.push(where('branchId', '==', branchId))
-  } else if (allowedBranchIds !== null && allowedBranchIds.length > 0) {
+  } else if (allowedBranchIds !== null && allowedBranchIds !== undefined && allowedBranchIds.length > 0) {
     // Filter by allowed branches (up to 10 for Firestore 'in' query)
     if (allowedBranchIds.length <= 10) {
       constraints.push(where('branchId', 'in', allowedBranchIds))
@@ -427,9 +429,10 @@ export async function getReviewsForStats(options: {
     
     // Branch filter (if not already filtered by Firestore query)
     if (branchId && review.branchId !== branchId) return false
-    if (!branchId && allowedBranchIds !== null && allowedBranchIds.length > 10) {
+    if (!branchId && allowedBranchIds !== null && allowedBranchIds !== undefined && allowedBranchIds.length > 10) {
       // More than 10 allowed branches, filter client-side
-      if (!allowedBranchIds.includes(review.branchId)) return false
+      const branchIds = allowedBranchIds // Type guard
+      if (branchIds && !branchIds.includes(review.branchId)) return false
     }
     
     return true

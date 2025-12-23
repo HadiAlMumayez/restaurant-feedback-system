@@ -16,7 +16,7 @@ import {
 } from 'firebase/auth'
 import { auth } from '../services/firebase'
 import { getAdmin } from '../services/admin'
-import type { Admin, AdminRole } from '../types'
+import type { AdminRole } from '../types'
 
 interface AuthContextType {
   user: User | null

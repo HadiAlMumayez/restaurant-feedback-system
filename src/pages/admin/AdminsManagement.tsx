@@ -8,8 +8,7 @@
  */
 
 import { useState, useEffect } from 'react'
-import { UserPlus, Trash2, Shield, Eye, Settings, Loader2, X, Check } from 'lucide-react'
-import { useSafeTranslation } from '../../hooks/useSafeTranslation'
+import { UserPlus, Trash2, Shield, Eye, Settings, Loader2, X } from 'lucide-react'
 import { getAllAdmins, setAdmin, removeAdmin } from '../../services/admin'
 import { useAuth } from '../../context/AuthContext'
 import { useRoleGuard } from '../../hooks/useRoleGuard'
@@ -18,7 +17,6 @@ import type { Admin, AdminRole } from '../../types'
 import type { Branch } from '../../types'
 
 export default function AdminsManagement() {
-  const { t } = useSafeTranslation()
   const { user } = useAuth()
   const { isOwner } = useRoleGuard()
   const [admins, setAdmins] = useState<Admin[]>([])

@@ -26,7 +26,7 @@ import LanguageSwitcher from '../LanguageSwitcher'
 export default function AdminLayout() {
   const { t } = useTranslation()
   const { user, logout } = useAuth()
-  const { isOwner, canPerform } = useRoleGuard()
+  const { canPerform } = useRoleGuard()
   const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(false)
 

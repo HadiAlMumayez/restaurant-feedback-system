@@ -5,7 +5,6 @@
  */
 
 import { useAuth } from '../context/AuthContext'
-import type { AdminRole } from '../types'
 
 export function useRoleGuard() {
   const { isAdmin, adminRole, allowedBranchIds } = useAuth()
