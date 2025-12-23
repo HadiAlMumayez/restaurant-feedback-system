@@ -13,11 +13,11 @@ import { downloadJson, downloadCsv, timestampToIso } from '../../utils/exportDat
 import { getAllBranches } from '../../services/firestore'
 import { getAllAdmins } from '../../services/admin'
 import { getReviews } from '../../services/firestore'
-import type { Branch, Review } from '../../types'
+import type { Review } from '../../types'
 import type { DocumentSnapshot } from 'firebase/firestore'
 
 export default function Backups() {
-  const { user, loading: authLoading, allowedBranchIds } = useAuth()
+  const { loading: authLoading, allowedBranchIds } = useAuth()
   const { canPerform } = useRoleGuard()
   const [exporting, setExporting] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -53,19 +53,19 @@ export default function Backups() {
 
     try {
       const reviews: Review[] = []
-      let lastDoc: DocumentSnapshot | null = null
+      let lastDoc: DocumentSnapshot | undefined = undefined
       let hasMore = true
 
       // Paginate through all reviews
       while (hasMore) {
         const result = await getReviews({
           pageSize: 500,
-          lastDoc,
+          lastDoc: lastDoc || undefined,
           allowedBranchIds, // Respects RBAC
         })
 
         reviews.push(...result.reviews)
-        lastDoc = result.lastDoc
+        lastDoc = result.lastDoc || undefined
         hasMore = result.hasMore
 
         // Safety limit: prevent infinite loops
@@ -104,19 +104,19 @@ export default function Backups() {
 
     try {
       const reviews: Review[] = []
-      let lastDoc: DocumentSnapshot | null = null
+      let lastDoc: DocumentSnapshot | undefined = undefined
       let hasMore = true
 
       // Paginate through all reviews
       while (hasMore) {
         const result = await getReviews({
           pageSize: 500,
-          lastDoc,
+          lastDoc: lastDoc || undefined,
           allowedBranchIds, // Respects RBAC
         })
 
         reviews.push(...result.reviews)
-        lastDoc = result.lastDoc
+        lastDoc = result.lastDoc || undefined
         hasMore = result.hasMore
 
         // Safety limit
