@@ -269,6 +269,7 @@ export async function submitReview(data: ReviewFormData): Promise<string> {
     contact: data.contact?.trim() || null,
     billId: data.billId?.trim() || null,
     createdAt: serverTimestamp(),
+    schemaVersion: 1, // For future migrations
   }
 
   try {

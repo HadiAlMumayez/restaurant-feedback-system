@@ -271,6 +271,60 @@ npm run build
 firebase deploy --only hosting
 ```
 
+## 💾 Backup & Migration Readiness
+
+The system includes built-in backup and export capabilities to protect your data and enable future database migrations.
+
+### Manual Export
+
+1. **Access Export Page**: Log in as owner/manager → Navigate to **Admin Dashboard → Backups**
+2. **Export Options**:
+   - **Reviews**: Export as JSON or CSV (respects RBAC - managers only see allowed branches)
+   - **Branches**: Export as JSON
+   - **Admins**: Export as JSON (owner only)
+3. **Automatic Pagination**: Large datasets are automatically paginated during export
+4. **ISO Timestamps**: All timestamps exported in ISO 8601 format for compatibility
+
+### Backup Schedule
+
+**Recommended**: 
+- Export reviews **weekly** (most frequently changing)
+- Export branches **monthly** (rarely changes)
+- Export admins **when roles change** (infrequent)
+
+### Storage Recommendations
+
+- **Local**: Secure local drive with encryption
+- **Cloud**: Google Drive, AWS S3, Azure Blob Storage, Dropbox
+- **Multiple Copies**: Keep backups in 2+ locations
+- **Version Control**: Name files with dates (e.g., `reviews-2025-01-15.json`)
+
+### Automated Backups
+
+**Option 1: Firebase Managed Exports** (Recommended)
+- Go to Firebase Console → Firestore Database → Export tab
+- Configure automated exports to Cloud Storage
+- Set schedule (daily/weekly/monthly)
+- No code required, handles large datasets efficiently
+
+**Option 2: Cloud Function** (Future)
+- Custom scheduled export function
+- Automated notifications
+- Integration with other systems
+
+See [docs/backups.md](docs/backups.md) for detailed backup and migration guide.
+
+### Migration Readiness
+
+The system uses a **repository pattern** (`src/repositories/FeedbackRepository.ts`) that abstracts database operations. This makes it easy to migrate to a different database (Postgres, MySQL, etc.) in the future:
+
+1. Create new repository implementation (e.g., `PostgresFeedbackRepository.ts`)
+2. Implement the `FeedbackRepository` interface
+3. Update `RepositoryProvider` to use new implementation
+4. **No UI changes required!**
+
+All reviews include a `schemaVersion` field (currently version 1) to help with future migrations.
+
 ## 🖥️ Tablet Kiosk Mode
 
 For production tablet deployment:

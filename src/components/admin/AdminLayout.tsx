@@ -18,6 +18,7 @@ import {
   Menu,
   X,
   ChevronRight,
+  Download,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { useRoleGuard } from '../../hooks/useRoleGuard'
@@ -37,6 +38,7 @@ export default function AdminLayout() {
     { to: '/admin/reviews', icon: MessageSquare, label: t('admin.reviews'), end: false, show: canPerform('viewReviews') },
     { to: '/admin/customers', icon: Users, label: t('admin.customers'), end: false, show: canPerform('viewReviews') },
     { to: '/admin/admins', icon: UserCog, label: t('admin.admins'), end: false, show: canPerform('manageAdmins') },
+    { to: '/admin/backups', icon: Download, label: 'Backups', end: false, show: canPerform('exportReports') },
   ]
 
   const navItems = allNavItems.filter(item => item.show)

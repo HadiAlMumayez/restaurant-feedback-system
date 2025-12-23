@@ -12,6 +12,7 @@ import BranchesManagement from './pages/admin/BranchesManagement'
 import ReviewsList from './pages/admin/ReviewsList'
 import CustomerFrequency from './pages/admin/CustomerFrequency'
 import AdminsManagement from './pages/admin/AdminsManagement'
+import Backups from './pages/admin/Backups'
 
 // Protected Route wrapper - requires authentication AND admin membership
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -82,6 +83,7 @@ export default function App() {
         <Route path="reviews" element={<ReviewsList />} />
         <Route path="customers" element={<CustomerFrequency />} />
         <Route path="admins" element={<AdminsManagement />} />
+        <Route path="backups" element={<Backups />} />
       </Route>
 
       {/* 404 Not Found */}
