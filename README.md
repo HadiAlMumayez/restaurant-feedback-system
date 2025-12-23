@@ -7,7 +7,7 @@ A complete, production-ready feedback collection and analytics system for restau
 ![Firebase](https://img.shields.io/badge/Firebase-10.7-orange)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue)
 
-## 📋 Features
+## 📋 Features:
 
 ### Customer Tablet App
 - 🌟 Beautiful, touch-friendly star rating interface
