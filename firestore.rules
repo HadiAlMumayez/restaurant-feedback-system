@@ -51,6 +51,12 @@ service cloud.firestore {
       return value == null || (value is string && value.size() <= maxLength);
     }
     
+    // Helper function to check if branch exists and is active
+    function branchExistsAndActive(branchId) {
+      let branch = get(/databases/$(database)/documents/branches/$(branchId));
+      return branch != null && branch.data.isActive == true;
+    }
+    
     // Helper function to validate review data
     function isValidReview(data) {
       return data.keys().hasAll(['branchId', 'rating', 'createdAt'])
@@ -71,10 +77,9 @@ service cloud.firestore {
      * - Write: Only owners can create/update branches
      */
     match /branches/{branchId} {
-      // Public can read branches (we filter active client-side for better performance)
-      // Admins can read all branches
-      // Note: For collection queries, we allow read and filter client-side
-      allow read: if true;
+      // Public can only get/list branches where isActive == true
+      // Admins can get/list all branches
+      allow get, list: if (resource.data.isActive == true) || isAdmin();
       
       // Only owners can create/update branches
       allow create: if isOwner()
@@ -101,8 +106,9 @@ service cloud.firestore {
      * - Update/Delete: None (immutable records)
      */
     match /reviews/{reviewId} {
-      // Public create with strict validation
-      allow create: if isValidReview(request.resource.data);
+      // Public create with strict validation and branch existence check
+      allow create: if isValidReview(request.resource.data) 
+        && branchExistsAndActive(request.resource.data.branchId);
       
       // Only admins can read reviews
       // Owners can read all reviews
@@ -118,12 +124,14 @@ service cloud.firestore {
      * ADMINS COLLECTION (RBAC: role-based access control)
      * Document ID: Firebase Auth UID
      * Fields: role ('owner' | 'manager' | 'viewer'), branchIds (string[]), timestamps
-     * - Read: All admins can read (to check their own role)
+     * - Read: Owners can read/list all; non-owners can only read their own
      * - Write: Only owners can create/update/delete admin records
      */
     match /admins/{adminId} {
-      // All admins can read (to check their own role and allowed branches)
-      allow read: if isAdmin();
+      // Owners can get/list all admin docs
+      // Non-owner admins can only get their own admin doc (not list everyone)
+      allow get: if isOwner() || (isAdmin() && adminId == request.auth.uid);
+      allow list: if isOwner();
       
       // Only owners can create/update admin records
       allow create: if isOwner()
